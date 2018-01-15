@@ -1,0 +1,21 @@
+#' luqueries
+#' 
+#' Land use queries
+#' 
+#' Standardqueries: spatial: iso_reg: ISO_3166_1_alpha_3 country code to MAgPIE
+#' regions code fao_iso: faostat country name to ISO_3166_1_alpha_3 country
+#' code fbs_iso: similar to fao_iso, but with slightly different names used in
+#' the food balance sheets goods: faostat_kcr: faostat product names of crops
+#' to MAgPIE crop product categories faostat_kli: faostat product names of
+#' crops to MAgPIE livestock product categories
+#' 
+#' query is made with the script "luquery.R" in the SVN folder tools/queries.
+#' Please use this script to extend the query. Please do not use NAs in
+#' queries, as some scripts might have problems handling it.
+#' @name luqueries
+#' @format This datafile contains a list of queries (arrays with at least two
+#' columns, where in one column stands a word that is translated in the second
+#' column).
+#' @author Benjamin Leon Bodirsky
+#' @seealso \code{\link{rename_dimnames}},\code{\link{groupAggregate}}
+NULL
