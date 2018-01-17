@@ -24,21 +24,24 @@
 #' NULL the original information is used.
 #' @param use_cache Read data from cache file if available (dangerous as changes
 #' in settings will not be considered if an existing cache file is found).
+#' @param weight named vector with weighting factors for each region for the cluster distribution 
+#' ,e.g. weight=c(AFR=3,EUR=0.5). weight > 1 will grant more cluster to a region and
+#' weight < 1 less cluster than by default. 
 #' @return A spam relation matrix
 #' @author Jan Philipp Dietrich
 #' @export
 #' @importFrom magclass read.magpie nyears wrap
 #' @seealso \code{\link{cluster_per_region}}, \code{\link{mag_kmeans}},
 #' \code{\link{mag_hierarchical}}
-clusterspam <- function(lr,hr="0.5", ifolder=".", ofolder=".", cfiles=c("lpj_yields", "lpj_airrig", "transport_distance"), years2use="y1995", spatial_header=NULL, use_cache=TRUE) {
+clusterspam <- function(lr,hr="0.5", ifolder=".", ofolder=".", cfiles=c("lpj_yields", "lpj_airrig", "transport_distance"), years2use="y1995", spatial_header=NULL, use_cache=TRUE, weight=NULL) {
   mode <- substr(lr,0,1)
   ncluster <- as.integer(substring(lr,2))
   cdata <- cluster_base(ifolder,cfiles,years2use,spatial_header,use_cache)
 
   if(mode=="n") {
-    spam <- mag_kmeans(cdata,ncluster)
+    spam <- mag_kmeans(cdata,ncluster,weight)
   } else if(mode=="h" | mode=="w" | mode=="s") {
-    spam <- mag_hierarchical(cdata,ncluster,ifolder,mode)
+    spam <- mag_hierarchical(cdata,ncluster,ifolder,mode,weight)
   } else {
     stop("Unkown clustering mode ",mode,"!")
   }

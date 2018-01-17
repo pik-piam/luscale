@@ -1,8 +1,8 @@
 Package: luscale
 Type: Package
 Title: Landuse Scaling Tools
-Version: 2.9.0
-Date: 2018-01-12
+Version: 2.10.0
+Date: 2018-01-17
 Author: Jan Philipp Dietrich, Markus Bonsch, Benjamin Bodirsky, Florian Humpenoeder
 Maintainer: Jan Philipp Dietrich <dietrich@pik-potsdam.de>
 Description: A collection of tools which allow to aggregate und disaggregate data in various ways.

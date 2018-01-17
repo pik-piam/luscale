@@ -8,24 +8,33 @@
 #' and if not it stores the tree information in the input folder for later use
 #' in the next execution of this function.
 #' 
-#' @usage mag_hierarchical(cdata,ncluster,ifolder,mode="h")
 #' @param cdata a cluster data file as produced by cluster_base
 #' @param ncluster The desired total number of clusters.
 #' @param ifolder input folder where the MAgPIE input files are located
 #' @param mode Clustering type. At the moment you can choose between complete
 #' linkage clustering (h), single linkage clustering (s) and Ward clustering
 #' (w).
+#' @param weight named vector with weighting factors for each region for the cluster distribution 
+#' ,e.g. weight=c(AFR=3,EUR=0.5). weight > 1 will grant more cluster to a region and
+#' weight < 1 less cluster than by default. 
 #' @return A spam relation matrix
 #' @author Jan Philipp Dietrich
 #' @importFrom magclass getCells ncells getRegions 
 #' @importFrom stats hclust cutree
 #' @seealso \code{\link{cluster_per_region}}, \code{\link{mag_kmeans}},
 #' \code{\link{clusterspam}}
-mag_hierarchical <- function(cdata,ncluster,ifolder,mode="h") {
-  tdata_file <- path(ifolder,paste(mode,digest::digest(dimnames(cdata)[[1]],"md5"),"tree.Rdata",sep="_"))
+mag_hierarchical <- function(cdata,ncluster,ifolder,mode="h", weight=NULL) {
+  wkey <- ifelse(is.null(weight), "", gsub(".","",paste0("_",names(weight),weight,collapse=""),fixed=TRUE))
+  tdata_file <- path(ifolder,paste(mode,digest::digest(dimnames(cdata)[[1]],"md5"),paste0("tree",wkey,".Rdata"),sep="_"))
   if(file.exists(tdata_file)) {
     load(tdata_file)
   } else {
+    calcw <- function(weight, regions) {
+      w <- rep(1,length(regions))
+      names(w) <- regions
+      if(!is.null(weight)) w[names(weight)] <- weight
+      return(w)
+    }
     spam <- spam::spam(0,nrow=dim(cdata)[1],ncol=ncluster)
     fullfit <- list()
     fullfit$labels <- getCells(cdata)
@@ -33,9 +42,10 @@ mag_hierarchical <- function(cdata,ncluster,ifolder,mode="h") {
     names(fullfit$order) <- fullfit$labels
     nrow <- 0
     nrows <- NULL
+    weight <- calcw(weight,getRegions(cdata))
     for(r in getRegions(cdata)) {
       cells <- grep(r,dimnames(cdata)[[1]])
-      dist <- dist(cdata[cells,], method = "euclidean")
+      dist <- dist(cdata[cells,], method = "euclidean")*weight[r]
       if(mode=="h") {
         fit <- hclust(dist, method="complete")
       } else if(mode=="w") {
