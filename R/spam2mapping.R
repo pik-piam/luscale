@@ -15,7 +15,6 @@
 
 
 spam2mapping <- function(spam,regions="GLO") {
-  if(any(colSums(spam)!=1)) stop("Does only work for spam objects with a unique mapping of each column!")
   regions <- sub("\\..*$","",regions)
   out <- data.frame(cell=spam@colindices,cluster=NA,weight=spam@entries,row.names = NULL)
   for(c in 1:(length(spam@rowpointers)-1)) {

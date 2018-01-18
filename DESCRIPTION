@@ -1,7 +1,7 @@
 Package: luscale
 Type: Package
 Title: Landuse Scaling Tools
-Version: 2.11.0
+Version: 2.11.1
 Date: 2018-01-18
 Author: Jan Philipp Dietrich, Markus Bonsch, Benjamin Bodirsky, Florian Humpenoeder
 Maintainer: Jan Philipp Dietrich <dietrich@pik-potsdam.de>
