@@ -46,5 +46,6 @@ clusterspam <- function(lr,hr="0.5", ifolder=".", ofolder=".", cfiles=c("lpj_yie
     stop("Unkown clustering mode ",mode,"!")
   }
   write.spam(spam,path(ofolder,paste(hr,"-to-",lr,"_sum.spam",sep="")))
+  saveRDS(spam2mapping(spam,rownames(cdata)), path(ofolder,paste(hr,"-to-",lr,"_mapping.rds",sep="")))
   return(spam)
 }
