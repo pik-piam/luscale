@@ -29,7 +29,7 @@
 # Version 1.01: minor change: also allow data.frames as query - Ulrich Kreidenweis
 
 rename_dimnames<-function(data,dim=1,query=NULL,from=NULL,to=NULL) {
-
+  if(dim-floor(dim)>0){ dim=old_dim_convention(dim) }  # check whether old naming convention is active
   if(is.data.frame(query)) {
     query <- sapply(query,as.character)
   }

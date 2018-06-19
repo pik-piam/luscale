@@ -1,4 +1,5 @@
 #' @importFrom utils data read.csv
+#' @export
 AutomaticMapping<-function(x,mapping=NULL,from=NULL,to=NULL){
 
   if (is.null(to)){to="NULL"}

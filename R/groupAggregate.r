@@ -119,7 +119,7 @@
 #' #AFR.1    39    45
 #' #LAM.2    21    24 
 #' }
-#' 
+
 groupAggregate<-function(data, vectorfunction=function(x){sum(x,na.rm=TRUE)}, dim=3, query=NULL, from=NULL, to=NULL, ...) {
   #vectorfunction=function(x){mean(x,na.rm=TRUE)}
   rename<-TRUE
