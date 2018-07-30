@@ -19,7 +19,7 @@
 #' yet more complicated to use.
 #' @author Benjamin Bodirsky, Ulrich Kreidenweis
 #' @export
-#' @importFrom magclass is.magpie unwrap as.magpie
+#' @importFrom magclass is.magpie unwrap as.magpie old_dim_convention
 #' @keywords array
 #################################
 #### rename by query         ####
