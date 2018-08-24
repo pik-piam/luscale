@@ -8,7 +8,10 @@
 #' @param lr low resolution containing the clustering mode as first letter in
 #' the name, e.g. h100. Available modes are at the moment n: normed kmeans
 #' clustering, h: hierarchical complete linkage clustering, s: hierarchical
-#' single linkage clustering and w: hierarchical Ward clustering
+#' single linkage clustering, w: hierarchical Ward clustering and c: combined
+#' hierarchical/k-means-clustering. In the latter hierarchical complete-linkage
+#' clustering is used to determine the distribution of clusters among regions
+#' and normed-k-means clustering is used to determine clusters within regions
 #' @param hr high resolution, e.g. 0.5
 #' @param ifolder input folder where the MAgPIE input files are located
 #' @param ofolder output folder where spam relation matrix should be written
@@ -42,6 +45,18 @@ clusterspam <- function(lr,hr="0.5", ifolder=".", ofolder=".", cfiles=c("lpj_yie
     spam <- mag_kmeans(cdata,ncluster,weight)
   } else if(mode=="h" | mode=="w" | mode=="s") {
     spam <- mag_hierarchical(cdata,ncluster,ifolder,mode,weight)
+  } else if(mode=="c"){
+    calcCPR <- function(spam, cell2reg) {
+      reg <- unique(cell2reg)
+      cluster2reg <- as.factor(spam%*%cell2reg/rowSums(spam))
+      levels(cluster2reg) <- levels(cell2reg)
+      cpr <- t(rbind(table(cell2reg),table(cluster2reg)))
+      dimnames(cpr)[[2]] <- c("cells","clusters")
+      return(cpr)  
+    }
+    tmpspam <- mag_hierarchical(cdata,ncluster,ifolder,mode="h",weight)
+    cell2reg <- as.factor(sub("\\..*$","",dimnames(cdata)[[1]]))
+    spam <- mag_kmeans(cdata,cpr=calcCPR(tmpspam,cell2reg))
   } else {
     stop("Unkown clustering mode ",mode,"!")
   }
