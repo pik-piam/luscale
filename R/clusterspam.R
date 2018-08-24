@@ -34,6 +34,7 @@
 #' @author Jan Philipp Dietrich
 #' @export
 #' @importFrom magclass read.magpie nyears wrap
+#' @importFrom spam rowSums
 #' @seealso \code{\link{cluster_per_region}}, \code{\link{mag_kmeans}},
 #' \code{\link{mag_hierarchical}}
 clusterspam <- function(lr,hr="0.5", ifolder=".", ofolder=".", cfiles=c("lpj_yields", "lpj_airrig", "transport_distance"), years2use="y1995", spatial_header=NULL, use_cache=TRUE, weight=NULL) {
@@ -48,7 +49,7 @@ clusterspam <- function(lr,hr="0.5", ifolder=".", ofolder=".", cfiles=c("lpj_yie
   } else if(mode=="c"){
     calcCPR <- function(spam, cell2reg) {
       reg <- unique(cell2reg)
-      cluster2reg <- as.factor(spam%*%cell2reg/rowSums(spam))
+      cluster2reg <- as.factor(spam%*%as.numeric(cell2reg)/rowSums(spam))
       levels(cluster2reg) <- levels(cell2reg)
       cpr <- t(rbind(table(cell2reg),table(cluster2reg)))
       dimnames(cpr)[[2]] <- c("cells","clusters")
