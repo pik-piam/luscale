@@ -38,7 +38,7 @@
 #' @importFrom spam rowSums
 #' @seealso \code{\link{cluster_per_region}}, \code{\link{mag_kmeans}},
 #' \code{\link{mag_hierarchical}}
-clusterspam <- function(lr,hr="0.5", ifolder=".", ofolder=".", cfiles=c("lpj_yields", "lpj_airrig", "transport_distance"), years2use="y1995", spatial_header=NULL, use_cache=TRUE, weight=NULL,seed=NULL) {
+clusterspam <- function(lr,hr="0.5", ifolder=".", ofolder=".", cfiles=c("lpj_yields", "lpj_airrig", "transport_distance"), years2use="y1995", spatial_header=NULL, use_cache=TRUE, weight=NULL,seed=42) {
   mode <- substr(lr,0,1)
   ncluster <- as.integer(substring(lr,2))
   cdata <- cluster_base(ifolder,cfiles,years2use,spatial_header,use_cache)

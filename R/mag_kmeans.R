@@ -17,7 +17,7 @@
 #' @importFrom stats kmeans
 #' @seealso \code{\link{cluster_per_region}}, \code{\link{mag_hierarchical}},
 #' \code{\link{clusterspam}}
-mag_kmeans <- function(cdata,ncluster=NULL,weight=NULL,cpr=NULL,seed=NULL) {
+mag_kmeans <- function(cdata,ncluster=NULL,weight=NULL,cpr=NULL,seed=42) {
   if(is.null(cpr)) cpr <- cluster_per_region(cdata,ncluster,weight)
   spam <- spam::spam(0,nrow=sum(cpr[,"clusters"]),ncol=dim(cdata)[1])
   ccount <- 0
