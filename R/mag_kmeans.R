@@ -11,20 +11,23 @@
 #' weight < 1 less cluster than by default. 
 #' @param cpr cells-per-region information as returned by cluster_per_region. Weight and ncluster are
 #' ignored in case that cpr is provided!
+#' @param seed a single value, interpreted as an integer, or NULL, to define seed for random calculations
 #' @return A spam relation matrix
 #' @author Jan Philipp Dietrich
 #' @importFrom stats kmeans
 #' @seealso \code{\link{cluster_per_region}}, \code{\link{mag_hierarchical}},
 #' \code{\link{clusterspam}}
-mag_kmeans <- function(cdata,ncluster=NULL,weight=NULL,cpr=NULL) {
+mag_kmeans <- function(cdata,ncluster=NULL,weight=NULL,cpr=NULL,seed=NULL) {
   if(is.null(cpr)) cpr <- cluster_per_region(cdata,ncluster,weight)
   spam <- spam::spam(0,nrow=sum(cpr[,"clusters"]),ncol=dim(cdata)[1])
   ccount <- 0
+  set.seed(seed)
   for(r in dimnames(cpr)[[1]]) {
     cells <- grep(r,dimnames(cdata)[[1]])
     fit <- kmeans(cdata[cells,],cpr[r,"clusters"],iter.max=10000)
     spam[cbind(fit$cluster+ccount,cells)] <- rep(1,length(fit$cluster))
     ccount <- ccount + cpr[r,"clusters"]
   }
+  set.seed(NULL)
   return(spam)
 }

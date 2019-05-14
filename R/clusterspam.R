@@ -30,6 +30,7 @@
 #' @param weight named vector with weighting factors for each region for the cluster distribution 
 #' ,e.g. weight=c(AFR=3,EUR=0.5). weight > 1 will grant more cluster to a region and
 #' weight < 1 less cluster than by default. 
+#' @param seed a single value, interpreted as an integer, or NULL, to define seed for random calculations
 #' @return A spam relation matrix
 #' @author Jan Philipp Dietrich
 #' @export
@@ -37,13 +38,13 @@
 #' @importFrom spam rowSums
 #' @seealso \code{\link{cluster_per_region}}, \code{\link{mag_kmeans}},
 #' \code{\link{mag_hierarchical}}
-clusterspam <- function(lr,hr="0.5", ifolder=".", ofolder=".", cfiles=c("lpj_yields", "lpj_airrig", "transport_distance"), years2use="y1995", spatial_header=NULL, use_cache=TRUE, weight=NULL) {
+clusterspam <- function(lr,hr="0.5", ifolder=".", ofolder=".", cfiles=c("lpj_yields", "lpj_airrig", "transport_distance"), years2use="y1995", spatial_header=NULL, use_cache=TRUE, weight=NULL,seed=NULL) {
   mode <- substr(lr,0,1)
   ncluster <- as.integer(substring(lr,2))
   cdata <- cluster_base(ifolder,cfiles,years2use,spatial_header,use_cache)
 
   if(mode=="n") {
-    spam <- mag_kmeans(cdata,ncluster,weight)
+    spam <- mag_kmeans(cdata,ncluster,weight,seed=seed)
   } else if(mode=="h" | mode=="w" | mode=="s") {
     spam <- mag_hierarchical(cdata,ncluster,ifolder,mode,weight)
   } else if(mode=="c"){
@@ -57,7 +58,7 @@ clusterspam <- function(lr,hr="0.5", ifolder=".", ofolder=".", cfiles=c("lpj_yie
     }
     tmpspam <- mag_hierarchical(cdata,ncluster,ifolder,mode="h",weight)
     cell2reg <- as.factor(sub("\\..*$","",dimnames(cdata)[[1]]))
-    spam <- mag_kmeans(cdata,cpr=calcCPR(tmpspam,cell2reg))
+    spam <- mag_kmeans(cdata,cpr=calcCPR(tmpspam,cell2reg),seed=seed)
   } else {
     stop("Unkown clustering mode ",mode,"!")
   }
