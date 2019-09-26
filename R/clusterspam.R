@@ -16,9 +16,9 @@
 #' @param ifolder input folder where the MAgPIE input files are located
 #' @param ofolder output folder where spam relation matrix should be written
 #' to.
-#' @param cfiles a vector containin the names of the MAgPIE input files
+#' @param cfiles a vector containing the names of the MAgPIE input files
 #' (beginning of the name is enough)
-#' @param years2use A vector with years with should be taken into account for
+#' @param years2use A vector with years which should be taken into account for
 #' the clustering
 #' @param spatial_header A vector of the form c("REG.1","REG.2") (region name,
 #' cell number) with entries for each spatial entity of the MAgPIE input files
