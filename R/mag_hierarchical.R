@@ -23,6 +23,7 @@
 #' @importFrom stats hclust cutree
 #' @seealso \code{\link{cluster_per_region}}, \code{\link{mag_kmeans}},
 #' \code{\link{clusterspam}}
+#' @export
 mag_hierarchical <- function(cdata,ncluster,ifolder,mode="h", weight=NULL) {
   wkey <- ifelse(is.null(weight), "", gsub(".","",paste0("_",names(weight),weight,collapse=""),fixed=TRUE))
   tdata_file <- path(ifolder,paste(mode,digest::digest(dimnames(cdata)[[1]],"md5"),paste0("tree",wkey,".Rdata"),sep="_"))

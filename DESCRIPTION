@@ -1,8 +1,8 @@
 Package: luscale
 Type: Package
 Title: PIK Landuse Group Data Scaling Tools
-Version: 2.16.0
-Date: 2019-05-14
+Version: 2.17.0
+Date: 2020-03-06
 Authors@R: c(person("Jan Philipp", "Dietrich", email = "dietrich@pik-potsdam.de", role = c("aut","cre")),
              person("Benjamin Leon", "Bodirsky", email = "bodirsky@pik-potsdam.de", role = "aut"),
              person("Markus", "Bonsch", role = "aut"),
@@ -18,5 +18,5 @@ BugReports: https://github.com/pik-piam/luscale/issues
 License: BSD_2_clause + file LICENSE
 LazyData: no
 Encoding: UTF-8
-RoxygenNote: 6.1.1
-ValidationKey: 38944800
+RoxygenNote: 7.0.2
+ValidationKey: 39769590
