@@ -1,8 +1,8 @@
 Package: luscale
 Type: Package
 Title: PIK Landuse Group Data Scaling Tools
-Version: 2.17.0
-Date: 2020-03-06
+Version: 2.18.0
+Date: 2020-09-04
 Authors@R: c(person("Jan Philipp", "Dietrich", email = "dietrich@pik-potsdam.de", role = c("aut","cre")),
              person("Benjamin Leon", "Bodirsky", email = "bodirsky@pik-potsdam.de", role = "aut"),
              person("Markus", "Bonsch", role = "aut"),
@@ -12,11 +12,10 @@ Authors@R: c(person("Jan Philipp", "Dietrich", email = "dietrich@pik-potsdam.de"
 Description: A collection of tools which allow to aggregate und disaggregate data in various ways.
 Depends: R(>= 2.10.0), methods, magclass
 Suggests: sp, raster, digest
-Imports: spam, stats, utils
+Imports: spam, stats, utils, madrat
 URL: https://github.com/pik-piam/luscale, https://doi.org/10.5281/zenodo.1158584
 BugReports: https://github.com/pik-piam/luscale/issues
 License: BSD_2_clause + file LICENSE
 LazyData: no
 Encoding: UTF-8
-RoxygenNote: 7.0.2
-ValidationKey: 39769590
+RoxygenNote: 7.1.1

@@ -8,8 +8,8 @@
 #' @return data.frame containing the mapping and weights
 #' @author Jan Philipp Dietrich
 #' @export
-#' @example 
-#' spam <- as.spam(matrix(c(0.2,0,0.8,0,0,1),2,3))
+#' @examples
+#' spam <- spam::as.spam(matrix(c(0.2,0,0.8,0,0,1),2,3))
 #' spam2mapping(spam,c("A","A","B"))
 #' @seealso \code{\link{clusterspam}}
 
