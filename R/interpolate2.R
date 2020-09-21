@@ -82,7 +82,7 @@ interpolate2 <- function(x, x_ini, map, x_ini_lr=NULL){
     stop("Year of x_ini must be smaller than start year of x")
   }
   
-  if(is.null(x_ini_lr)) x_ini_lr <- madrat::toolAggregate(x_ini,map)
+  if(is.null(x_ini_lr)) x_ini_lr <- madrat::toolAggregate(x_ini,map, from="cell", to="cluster")
   
   lr <- mbind(x_ini_lr,x)
   #Test if the total sum is constant
@@ -95,10 +95,10 @@ interpolate2 <- function(x, x_ini, map, x_ini_lr=NULL){
   reduct <- -less/setYears((lr[,1:(nyears(lr)-1),]+10^-100),getYears(less))
   avail  <- dimSums(-less, dim=3)
   extent <- more/(avail+10^-100)
-
+  
   # disaggregate shares (combined disaggregation is faster than separate disaggregation
   # for both data sets)
-  extent_hr <- reduct_hr <- madrat::toolAggregate(extent-reduct,map)
+  extent_hr <- reduct_hr <- madrat::toolAggregate(extent-reduct,map, from="cluster", to="cell")
   extent_hr[extent_hr<0] <- 0
   reduct_hr[reduct_hr>0] <- 0
   reduct_hr <- -reduct_hr
