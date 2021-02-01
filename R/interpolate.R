@@ -94,7 +94,7 @@ interpolate<-function(x,x_ini_lr,x_ini_hr,spam,add_avail_hr=NULL,prev_year="y198
   lr<-mbind(x_ini_lr,x)
   #Test if the total sum is constant
   if(is.null(add_avail_hr)){
-    test<-dimSums(lr,dim=c(1,3.1))[,2:nyears(lr),]- setYears(dimSums(lr,dim=c(1,3.1))[,1:nyears(lr)-1,],getYears(lr)[2:nyears(lr)])
+    test<-dimSums(lr,dim=c(1,3))[,2:nyears(lr),]- setYears(dimSums(lr,dim=c(1,3))[,1:nyears(lr)-1,],getYears(lr)[2:nyears(lr)])
     if(max(test)>0.1||min(test)< -0.1) warning("Total stock is not constant over time. See help for details")
   }
   #calculate reduction and extension shares which then can be disaggregated
