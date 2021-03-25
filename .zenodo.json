@@ -1,6 +1,6 @@
 {
   "title": "luscale: PIK Landuse Group Data Scaling Tools",
-  "version": "2.18.3",
+  "version": "2.19.0",
   "description": "<p>A collection of tools which allow to aggregate und disaggregate data in various ways.<\/p>",
   "creators": [
     {
@@ -11,6 +11,9 @@
     },
     {
       "name": "Bonsch, Markus"
+    },
+    {
+      "name": "Patrick, von Jeetze"
     },
     {
       "name": "Kreidenweiss, Ulrich"
