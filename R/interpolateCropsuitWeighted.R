@@ -57,18 +57,18 @@
 #' @param spam The spam file (sum) that is to be used for disaggregation.
 #' @param cropland_scen different options are
 #' \itemize{
-#' \item \code{"allmarginal_0pNonCropVeg"}: All marginal land, 0 % conservation of non-cropland vegetation
-#' \item \code{"allmarginal_10pNonCropVeg"}: All marginal land, 10 % conservation of non-cropland vegetation
-#' \item \code{"allmarginal_20pNonCropVeg"}: All marginal land, 20 % conservation of non-cropland vegetation
-#' \item \code{"allmarginal_30pNonCropVeg"}: All marginal land, 30 % conservation of non-cropland vegetation
-#' \item \code{"halfmarginal_0pNonCropVeg"}: Half of the marginal land excluded, 0 % conservation of non-cropland vegetation
-#' \item \code{"halfmarginal_10pNonCropVeg"}: Half of the marginal land excluded, 10 % conservation of non-cropland vegetation
-#' \item \code{"halfmarginal_20pNonCropVeg"}: Half of the marginal land excluded, 20 % conservation of non-cropland vegetation
-#' \item \code{"halfmarginal_30pNonCropVeg"}: Half of the marginal land excluded, 30 % conservation of non-cropland vegetation
-#' \item \code{"nomarginal_0pNonCropVeg"}: No marginal land, 0 % conservation of non-cropland vegetation
-#' \item \code{"nomarginal_10pNonCropVeg"}: No marginal land, 10 % conservation of non-cropland vegetation
-#' \item \code{"nomarginal_20pNonCropVeg"}: No marginal land, 20 % conservation of non-cropland vegetation
-#' \item \code{"nomarginal_30pNonCropVeg"}: No marginal land, 30 % conservation of non-cropland vegetation
+#' \item \code{"allmarginal_0pNonCropVeg"}: All marginal land, 0 \% conservation of non-cropland vegetation
+#' \item \code{"allmarginal_10pNonCropVeg"}: All marginal land, 10 \% conservation of non-cropland vegetation
+#' \item \code{"allmarginal_20pNonCropVeg"}: All marginal land, 20 \% conservation of non-cropland vegetation
+#' \item \code{"allmarginal_30pNonCropVeg"}: All marginal land, 30 \% conservation of non-cropland vegetation
+#' \item \code{"halfmarginal_0pNonCropVeg"}: Half of the marginal land excluded, 0 \% conservation of non-cropland vegetation
+#' \item \code{"halfmarginal_10pNonCropVeg"}: Half of the marginal land excluded, 10 \% conservation of non-cropland vegetation
+#' \item \code{"halfmarginal_20pNonCropVeg"}: Half of the marginal land excluded, 20 \% conservation of non-cropland vegetation
+#' \item \code{"halfmarginal_30pNonCropVeg"}: Half of the marginal land excluded, 30 \% conservation of non-cropland vegetation
+#' \item \code{"nomarginal_0pNonCropVeg"}: No marginal land, 0 \% conservation of non-cropland vegetation
+#' \item \code{"nomarginal_10pNonCropVeg"}: No marginal land, 10 \% conservation of non-cropland vegetation
+#' \item \code{"nomarginal_20pNonCropVeg"}: No marginal land, 20 \% conservation of non-cropland vegetation
+#' \item \code{"nomarginal_30pNonCropVeg"}: No marginal land, 30 \% conservation of non-cropland vegetation
 #' }
 #' @param year_ini Timestep that is assumed for the initial distributions \code{x_ini_hr} and \code{x_ini_lr}.
 #' @param unit Unit of the output. "Mha" or "share"
