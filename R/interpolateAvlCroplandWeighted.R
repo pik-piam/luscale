@@ -1,7 +1,8 @@
-#' interpolateCropsuitWeighted
+#' interpolateAvlCroplandWeighted
 #'
-#' Disaggregates a modelled time series of land pools after optimisation from the model resolution to the resolution
-#' of the high resolution land initialisation data set, based on a spam matrix and cropland suitability information.
+#' Disaggregates a modelled time series of land pools after optimisation from the model resolution (low resolution)
+#' to the resolution of the land initialisation data set (high resolution), based on a spam matrix and available
+#' cropland.
 #'
 #' The function requires the following input data:
 #' \itemize{
@@ -10,7 +11,7 @@
 #' \item \code{x_ini_lr} and \code{x_ini_hr} provide the initial land pools (Mha) at high (hr) and low resolution (lr)
 #' before the optimisation. They only contain the initial time step, but share the three-dimensional structure
 #' with \code{x}.
-#' \item \code{cropsuit_lr} and \code{cropsuit_hr} provide information about the amount (Mha) of suitable cropland
+#' \item \code{avl_cropland_lr} and \code{avl_cropland_hr} provide information about the amount (Mha) of available cropland
 #' at high and low resolutions.
 #' \item \code{spam} spam matrix containing information about cell belongings between the high and low resolution.
 #' }
@@ -23,9 +24,9 @@
 #' 2. In order to allocate the area of cropland expansion and reduction, for each grid cell at high resolution
 #' expansion and reduction weights are calculated:
 #' \itemize{
-#' \item The expansion weight is calculated as the ratio between available cropland at the grid cell level
-#' (high resolution) and total available cropland at the low resolution spatial unit. Available cropland is
-#' the difference between suitable cropland and the amount of cropland at the previous time step minus urban land,
+#' \item The expansion weight is calculated as the ratio between the remaining cropland at the grid cell level
+#' (high resolution) and overall remaining cropland at the low resolution spatial unit. Remaining cropland is
+#' the difference between the available cropland and the amount of cropland at the previous time step minus urban land,
 #' since it assumed that cropland cannot be allocated to urban land.
 #' \item The reduction weight is given by the ratio between the amount of cropland per grid cell and the total area
 #' of cropland at the low resolution spatial unit. This assumes that the cropland reduction is equally distributed
@@ -39,32 +40,32 @@
 #' 4. Following the cropland allocation, the land area for the remaining non-cropland vegetation pools is calculated
 #' by substracting the allocated cropland and urban land areas from the total land area in each grid cell.
 #'
-#' 5. The non-cropland vegetation pool at the high resolution (except of primary forest), calculated in step 4., is 
-#' then multiplied by the respective shares of the remaining non-cropland vegetation pools at the previous time step 
-#' (temporary allocation). This, however, is not sufficient to also account for changes within these land pools. 
-#' Therefore, the residual changes in these land pools are calculated by comparing the sum of the temporarily 
-#' allocated non-cropland pools with the pools at low resolution. The residual area of land expansion and reduction 
-#' is then allocated by based on reduction and expansion weights, similar as in 2.. The reduction weight is calculated 
-#' as the ratio between the given temporary land pool at high resolution and total temporary land pool at low 
-#' resolution. The expansion weight is calculated as the ratio between the remaining land to be filled in each land 
-#' pool and the total amount of residual land to be allocated in the current time step. 
-#' 
-#' 6. Primary forest is treated in a slightly different way, as primary forest cannot be expanded over time. In 
-#' cropland cells with no cropland expansion, primary forest is, at first, assumed to remain constant and transferred 
+#' 5. The non-cropland vegetation pool at the high resolution (except of primary forest), calculated in step 4., is
+#' then multiplied by the respective shares of the remaining non-cropland vegetation pools at the previous time step
+#' (temporary allocation). This, however, is not sufficient to also account for changes within these land pools.
+#' Therefore, the residual changes in these land pools are calculated by comparing the sum of the temporarily
+#' allocated non-cropland pools with the pools at low resolution. The residual area of land expansion and reduction
+#' is then allocated by based on reduction and expansion weights, similar as in 2.. The reduction weight is calculated
+#' as the ratio between the given temporary land pool at high resolution and total temporary land pool at low
+#' resolution. The expansion weight is calculated as the ratio between the remaining land to be filled in each land
+#' pool and the total amount of residual land to be allocated in the current time step.
+#'
+#' 6. Primary forest is treated in a slightly different way, as primary forest cannot be expanded over time. In
+#' cropland cells with no cropland expansion, primary forest is, at first, assumed to remain constant and transferred
 #' from the previous time step to the current time step. Once again, the sum of the temporarary allocation is compared
-#' to the sum of primary forest at low resolution to determine the residual primary forest land, which still needs to 
-#' be allocated. Where there is an surplus of primary forest, the reduction weight is calculated similarly as in 5., 
-#' the land area is reduced accordingly. In areas where the temprorily allocated primary forest falls short, the 
+#' to the sum of primary forest at low resolution to determine the residual primary forest land, which still needs to
+#' be allocated. Where there is an surplus of primary forest, the reduction weight is calculated similarly as in 5.,
+#' the land area is reduced accordingly. In areas where the temprorily allocated primary forest falls short, the
 #' allocation weight is calculated as a function of the difference in primary land between the previous time step and
 #' in the current time step. This makes sure that there is no expansion of primary forest.
-#' 
+#'
 #' 7. Urban land is assumed to be constant over time.
 #'
 #' @param x Time series of land pools (model output) to be disaggregated.
 #' @param x_ini_lr The low resolution distribution of x before model optimization.
 #' @param x_ini_hr The initial high resolution distribution of x (land-use initialisation) before model optimization.
-#' @param cropsuit_lr The area of land suitable for cropland at the low resolution.
-#' @param cropsuit_hr The area of suitable cropland at the high resolution.
+#' @param avl_cropland_lr The area of land available for crop cultivation at the low resolution.
+#' @param avl_cropland_hr The area of available cropland at the high resolution.
 #' @param spam The spam file (sum) that is to be used for disaggregation.
 #' @param cropland_scen Depending on the cropland suitability data, standard options are
 #' \itemize{
@@ -72,6 +73,8 @@
 #' \item \code{"half_marginal"}: Half of the marginal land is excluded from cropland allocation
 #' \item \code{"no_marginal"}: Marginal land is fully excluded from cropland
 #' }
+#' @param set_aside_shr Share of available cropland that is witheld for other land cover types
+#' @param set_aside_fader Fader for share of set aside policy
 #' @param year_ini Timestep that is assumed for the initial distributions \code{x_ini_hr} and \code{x_ini_lr}.
 #' @param unit Unit of the output. "Mha" or "share"
 #' @return The disaggregated MAgPIE object containing x_ini_hr as first
@@ -83,29 +86,31 @@
 #' \code{\link{speed_aggregate}}
 #' @examples
 #' \dontrun{
-#' a <- interpolateCropsuitWeighted(
+#' a <- interpolateAvlCroplandWeighted(
 #'   x = land,
 #'   x_ini_lr = land_ini_lr,
 #'   x_ini_hr = land_ini_hr,
-#'   cropsuit_lr = "avl_cropland.cs3",
-#'   cropsuit_hr = "avl_cropland_0.5.mz",
+#'   avl_cropland_lr = "avl_cropland.cs3",
+#'   avl_cropland_hr = "avl_cropland_0.5.mz",
 #'   spam = "0.5-to-c200_sum.spam",
 #'   cropland_scen = "all_marginal"
 #' )
 #' }
 #'
-interpolateCropsuitWeighted <- function(x, x_ini_lr, x_ini_hr, cropsuit_lr, cropsuit_hr, spam, cropland_scen = "all_marginal", year_ini = "y1985", unit = "Mha") {
+interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_lr, avl_cropland_hr, spam,
+                                           cropland_scen = "all_marginal", set_aside_shr = 0,
+                                           set_aside_fader = NULL, year_ini = "y1985", unit = "Mha") {
 
   # test whether data can be handled by function
   if (!is.magpie(x) || !is.magpie(x_ini_lr) || !is.magpie(x_ini_hr)) stop("x, x_ini_lr and x_ini_hr have to be magpie objects")
   if (nregions(x) != nregions(x_ini_lr)) stop("x and x_ini_lr have to be of the same spatial aggregation")
   if (nyears(x_ini_lr) > 1 || nyears(x_ini_hr) > 1) stop("Initialization data must only have one timestep")
   if (!all(getNames(x) == getNames(x_ini_lr)) || !all(getNames(x) == getNames(x_ini_hr))) stop("dimnames[[3]] of x, x_ini_lr and x_ini_hr have to be the same")
-  
-  #========================================================================
+
+  # ========================================================================
   # prepare data for land allocation
-  #========================================================================
-  
+  # ========================================================================
+
   # get land-use intialisation year
   getYears(x_ini_hr) <- year_ini
   getYears(x_ini_lr) <- year_ini
@@ -130,35 +135,57 @@ interpolateCropsuitWeighted <- function(x, x_ini_lr, x_ini_hr, cropsuit_lr, crop
   # land expansion
   land_expan_lr <- land_diff_lr
   land_expan_lr[land_expan_lr < 0] <- 0
-  
+
   #------------------------------------------------------------------------
   # read crop suitabiliy data
   #------------------------------------------------------------------------
-  
-  if (is.character(cropsuit_hr) | is.character(cropsuit_lr)) {
-    if (!file.exists(cropsuit_hr)) stop("high resolution cropland suitability file not found")
-    if (!file.exists(cropsuit_lr)) stop("low resolution cropland suitability file not found")
-    
+
+  if (is.character(avl_cropland_hr) | is.character(avl_cropland_lr)) {
+    if (!file.exists(avl_cropland_hr)) stop("high resolution available cropland data not found")
+    if (!file.exists(avl_cropland_lr)) stop("low resolution available cropland file not found")
+
     # low resolution
-    cropland_suit_lr <- read.magpie(cropsuit_lr)
+    avl_cropland_lr <- read.magpie(avl_cropland_lr)
     # high resolution
-    cropland_suit_hr <- read.magpie(cropsuit_hr)
+    avl_cropland_hr <- read.magpie(avl_cropland_hr)
 
     # correct for urban land because it is constant
-    # where suitable cropland is larger than total non urban land chose the smaller value [pmin()]
+    # where available cropland is larger than total non urban land chose the smaller value [pmin()]
     # high resolution
     land_non_urban_hr <- (dimSums(x_ini_hr, dim = 3) - x_ini_hr[, , "urban"])
-    getCells(land_non_urban_hr) <- getCells(cropland_suit_hr)
-    cropland_suit_hr <- pmin(cropland_suit_hr[, , cropland_scen], land_non_urban_hr)
+    getCells(land_non_urban_hr) <- getCells(avl_cropland_hr)
+    avl_cropland_hr <- pmin(avl_cropland_hr[, , cropland_scen], land_non_urban_hr)
     # low resolution
     land_non_urban_lr <- (dimSums(x_ini_lr, dim = 3) - x_ini_lr[, , "urban"])
-    cropland_suit_lr <- pmin(cropland_suit_lr[, , cropland_scen], land_non_urban_lr)
+    avl_cropland_lr <- pmin(avl_cropland_lr[, , cropland_scen], land_non_urban_lr)
   }
 
-  # compute available cropland for each time step
-  cropland_avail_lr <- cropland_suit_lr[, , cropland_scen] - lr[, , "crop"]
-  getNames(cropland_avail_lr) <- "crop"
-  getYears(cropland_avail_lr) <- getYears(lr)
+  # expand available cropland data over time
+  # high resolution
+  avl_cropland_hr_tmp <- new.magpie(getCells(avl_cropland_hr), getYears(lr), cropland_scen)
+  avl_cropland_hr_tmp[, getYears(lr), ] <- avl_cropland_hr
+  avl_cropland_hr <- avl_cropland_hr_tmp
+  # low resolution
+  avl_cropland_lr_tmp <- new.magpie(getCells(avl_cropland_lr), getYears(lr), cropland_scen)
+  avl_cropland_lr_tmp[, getYears(lr), ] <- avl_cropland_lr
+  avl_cropland_lr <- avl_cropland_lr_tmp
+
+
+  if (set_aside_shr != 0 & is.null(set_aside_fader)) stop("Share of withheld cropland given, but no policy fader for target year provided")
+  if (set_aside_shr != 0 & !is.null(set_aside_fader)) {
+    # correct available cropland with policy restriction
+    for (t in 1:nyears(lr)) {
+      # high resolution
+      avl_cropland_hr[, t, ] <- avl_cropland_hr[, t, ] * (1 - set_aside_shr * set_aside_fader[getYears(lr)[t], ])
+      # low resolution
+      avl_cropland_lr[, t, ] <- avl_cropland_lr[, t, ] * (1 - set_aside_shr * set_aside_fader[getYears(lr)[t], ])
+    }
+  }
+
+  # compute available cropland for expansion in each time step
+  cropland_remain_lr <- avl_cropland_lr[, , cropland_scen] - lr[, , "crop"]
+  getNames(cropland_remain_lr) <- "crop"
+  getYears(cropland_remain_lr) <- getYears(lr)
 
   # get spam file
   if (is.character(spam)) {
@@ -169,21 +196,21 @@ interpolateCropsuitWeighted <- function(x, x_ini_lr, x_ini_hr, cropsuit_lr, crop
   #------------------------------------------------------------------------
   # disaggregate low resolution output data to be used in calculations
   #------------------------------------------------------------------------
-  
+
   # total land expansion and reduction at low resolution
   land_reduc_lr_dagg <- speed_aggregate(land_reduc_lr, t(rel))
   land_expan_lr_dagg <- speed_aggregate(land_expan_lr, t(rel))
   # available cropland at low resolution
-  cropland_avail_lr_dagg <- speed_aggregate(cropland_avail_lr, t(rel))
+  cropland_remain_lr_dagg <- speed_aggregate(cropland_remain_lr, t(rel))
   # total amount of cropland at low resolution
   land_lr_dagg <- speed_aggregate(lr, t(rel))
 
-  #========================================================================
-  # allocate cropland at high res (hr) 
-  #========================================================================
+  # ========================================================================
+  # allocate cropland at high res (hr)
+  # ========================================================================
 
   # create new magpie object for cropland allocation (high resolution)
-  cropland_hr <- new.magpie(getCells(land_expan_lr_dagg), c(year_ini, getYears(land_expan_lr_dagg)), "crop")
+  cropland_hr <- new.magpie(getCells(land_expan_lr_dagg), getYears(lr), "crop")
   getCells(x_ini_hr) <- getCells(land_expan_lr_dagg)
   cropland_hr[, year_ini, ] <- x_ini_hr[, , "crop"]
 
@@ -196,11 +223,11 @@ interpolateCropsuitWeighted <- function(x, x_ini_lr, x_ini_hr, cropsuit_lr, crop
     # cropland reduction
     cropland_reduc <- land_reduc_lr_dagg[, t - 1, "crop"]
     # available cropland in each grid cell (high resolution)
-    cropland_avail <- setNames(cropland_suit_hr[, , cropland_scen] - cropland_hr[, t - 1, ], "crop")
-    cropland_avail[cropland_avail < 0, , ] <- 0
+    cropland_remain <- setNames(avl_cropland_hr[, t, cropland_scen] - cropland_hr[, t - 1, ], "crop")
+    cropland_remain[cropland_remain < 0, , ] <- 0
     # expansion weight: divide available cropland in each grid cell
     # by total available cropland of the respective cluster (low resolution)
-    cropland_expan_weight <- cropland_avail / cropland_avail_lr_dagg[, t - 1, ]
+    cropland_expan_weight <- cropland_remain / cropland_remain_lr_dagg[, t - 1, ]
     cropland_expan_weight[is.na(cropland_expan_weight), , ] <- 0
     getYears(cropland_expan_weight) <- getYears(cropland_hr)[t]
     # reduction weight: divide cropland in each grid cell by the
@@ -212,9 +239,9 @@ interpolateCropsuitWeighted <- function(x, x_ini_lr, x_ini_hr, cropsuit_lr, crop
     cropland_hr[, t, "crop"] <- cropland + cropland_expan * cropland_expan_weight - cropland_reduc * cropland_reduc_weight
   }
 
-  #========================================================================
-  # allocate non-cropland pools 
-  #========================================================================
+  # ========================================================================
+  # allocate non-cropland pools
+  # ========================================================================
 
   # calculate total land area in each grid cell (high resolution)
   land_tot_hr <- setYears(dimSums(x_ini_hr, dim = 3), NULL)
@@ -233,13 +260,13 @@ interpolateCropsuitWeighted <- function(x, x_ini_lr, x_ini_hr, cropsuit_lr, crop
   #------------------------------------------------------------------------
   # allocate urban (constant)
   #------------------------------------------------------------------------
-  
+
   land_nocrop_hr[, , "urban"] <- x_ini_hr[, , "urban"]
 
   #------------------------------------------------------------------------
   # allocate primary forest
   #------------------------------------------------------------------------
-  
+
   for (t in 2:nyears(land_nocrop_hr)) {
 
     # check where there was cropland expansion
@@ -257,9 +284,9 @@ interpolateCropsuitWeighted <- function(x, x_ini_lr, x_ini_hr, cropsuit_lr, crop
     land_nocrop_hr[where_crop_noexpan, t, "primforest"] <- land_nocrop_hr[where_crop_noexpan, t - 1, "primforest"]
 
     # sum temporary primary forest pool at low resolution to compare it with the pool in x
-    tmp_land_primforest_lr <- speed_aggregate(land_nocrop_hr[, t, "primforest"]* 1e+10, rel)
+    tmp_land_primforest_lr <- speed_aggregate(land_nocrop_hr[, t, "primforest"] * 1e+10, rel)
     tmp_land_primforest_lr_dagg <- speed_aggregate(tmp_land_primforest_lr, t(rel))
-    tmp_land_primforest_lr_dagg <- tmp_land_primforest_lr_dagg/1e+10
+    tmp_land_primforest_lr_dagg <- tmp_land_primforest_lr_dagg / 1e+10
 
     # calculate the residual difference that still needs to be allocated
     primf_residual_diff_lr <- land_lr_dagg[, t, "primforest"] - tmp_land_primforest_lr_dagg
@@ -296,11 +323,11 @@ interpolateCropsuitWeighted <- function(x, x_ini_lr, x_ini_hr, cropsuit_lr, crop
   # calculate remaining secondary vegetation pool after allocation of cropland and primary forest
   land_tot_secd_veg_hr <- land_tot_nocrop_veg_hr - land_nocrop_hr[, , "primforest"]
   getNames(land_tot_secd_veg_hr) <- NULL
-  
+
   #------------------------------------------------------------------------
   # allocate secondary vegetation land pools
   #------------------------------------------------------------------------
-  
+
   for (t in 2:nyears(land_nocrop_hr)) {
 
     # calculate share of non-cropland vegetation pools in previous time step
@@ -345,10 +372,10 @@ interpolateCropsuitWeighted <- function(x, x_ini_lr, x_ini_hr, cropsuit_lr, crop
     land_nocrop_hr[, t, secd_veg] <- land_nocrop_hr[, t, secd_veg] + residual_expan_lr * nocrop_expan_weight
   }
 
-  #========================================================================
+  # ========================================================================
   # return output
-  #========================================================================
-  
+  # ========================================================================
+
   # combine output
   hr <- mbind(cropland_hr, land_nocrop_hr)
   # correct for small negative deviations
