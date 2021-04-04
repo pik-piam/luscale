@@ -67,7 +67,7 @@
 #' @param avl_cropland_lr The area of land available for crop cultivation at the low resolution.
 #' @param avl_cropland_hr The area of available cropland at the high resolution.
 #' @param spam The spam file (sum) that is to be used for disaggregation.
-#' @param cropland_scen Depending on the cropland suitability data, standard options are
+#' @param marginal_land Depending on the cropland suitability data, standard options are
 #' \itemize{
 #' \item \code{"all_marginal"}: Cropland can be allocated to marginal land
 #' \item \code{"half_marginal"}: Half of the marginal land is excluded from cropland allocation
@@ -93,12 +93,12 @@
 #'   avl_cropland_lr = "avl_cropland.cs3",
 #'   avl_cropland_hr = "avl_cropland_0.5.mz",
 #'   spam = "0.5-to-c200_sum.spam",
-#'   cropland_scen = "all_marginal"
+#'   marginal_land = "all_marginal"
 #' )
 #' }
 #'
 interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_lr, avl_cropland_hr, spam,
-                                           cropland_scen = "all_marginal", set_aside_shr = 0,
+                                           marginal_land = "all_marginal", set_aside_shr = 0,
                                            set_aside_fader = NULL, year_ini = "y1985", unit = "Mha") {
 
   # test whether data can be handled by function
@@ -154,19 +154,19 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_l
     # high resolution
     land_non_urban_hr <- (dimSums(x_ini_hr, dim = 3) - x_ini_hr[, , "urban"])
     getCells(land_non_urban_hr) <- getCells(avl_cropland_hr)
-    avl_cropland_hr <- pmin(avl_cropland_hr[, , cropland_scen], land_non_urban_hr)
+    avl_cropland_hr <- pmin(avl_cropland_hr[, , marginal_land], land_non_urban_hr)
     # low resolution
     land_non_urban_lr <- (dimSums(x_ini_lr, dim = 3) - x_ini_lr[, , "urban"])
-    avl_cropland_lr <- pmin(avl_cropland_lr[, , cropland_scen], land_non_urban_lr)
+    avl_cropland_lr <- pmin(avl_cropland_lr[, , marginal_land], land_non_urban_lr)
   }
 
   # expand available cropland data over time
   # high resolution
-  avl_cropland_hr_tmp <- new.magpie(getCells(avl_cropland_hr), getYears(lr), cropland_scen)
+  avl_cropland_hr_tmp <- new.magpie(getCells(avl_cropland_hr), getYears(lr), marginal_land)
   avl_cropland_hr_tmp[, getYears(lr), ] <- avl_cropland_hr
   avl_cropland_hr <- avl_cropland_hr_tmp
   # low resolution
-  avl_cropland_lr_tmp <- new.magpie(getCells(avl_cropland_lr), getYears(lr), cropland_scen)
+  avl_cropland_lr_tmp <- new.magpie(getCells(avl_cropland_lr), getYears(lr), marginal_land)
   avl_cropland_lr_tmp[, getYears(lr), ] <- avl_cropland_lr
   avl_cropland_lr <- avl_cropland_lr_tmp
 
@@ -183,7 +183,7 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_l
   }
 
   # compute available cropland for expansion in each time step
-  cropland_remain_lr <- avl_cropland_lr[, , cropland_scen] - lr[, , "crop"]
+  cropland_remain_lr <- avl_cropland_lr[, , marginal_land] - lr[, , "crop"]
   getNames(cropland_remain_lr) <- "crop"
   getYears(cropland_remain_lr) <- getYears(lr)
 
@@ -223,7 +223,7 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_l
     # cropland reduction
     cropland_reduc <- land_reduc_lr_dagg[, t - 1, "crop"]
     # available cropland in each grid cell (high resolution)
-    cropland_remain <- setNames(avl_cropland_hr[, t, cropland_scen] - cropland_hr[, t - 1, ], "crop")
+    cropland_remain <- setNames(avl_cropland_hr[, t, marginal_land] - cropland_hr[, t - 1, ], "crop")
     cropland_remain[cropland_remain < 0, , ] <- 0
     # expansion weight: divide available cropland in each grid cell
     # by total available cropland of the respective cluster (low resolution)
