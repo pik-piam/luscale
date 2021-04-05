@@ -137,37 +137,26 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_l
   land_expan_lr[land_expan_lr < 0] <- 0
 
   #------------------------------------------------------------------------
-  # read crop suitabiliy data
+  # read available cropland data
   #------------------------------------------------------------------------
 
   if (is.character(avl_cropland_hr) | is.character(avl_cropland_lr)) {
     if (!file.exists(avl_cropland_hr)) stop("high resolution available cropland data not found")
     if (!file.exists(avl_cropland_lr)) stop("low resolution available cropland file not found")
-
     # low resolution
     avl_cropland_lr <- read.magpie(avl_cropland_lr)
     # high resolution
     avl_cropland_hr <- read.magpie(avl_cropland_hr)
-
-    # correct for urban land because it is constant
-    # where available cropland is larger than total non urban land chose the smaller value [pmin()]
-    # high resolution
-    land_non_urban_hr <- (dimSums(x_ini_hr, dim = 3) - x_ini_hr[, , "urban"])
-    getCells(land_non_urban_hr) <- getCells(avl_cropland_hr)
-    avl_cropland_hr <- pmin(avl_cropland_hr[, , marginal_land], land_non_urban_hr)
-    # low resolution
-    land_non_urban_lr <- (dimSums(x_ini_lr, dim = 3) - x_ini_lr[, , "urban"])
-    avl_cropland_lr <- pmin(avl_cropland_lr[, , marginal_land], land_non_urban_lr)
   }
 
   # expand available cropland data over time
   # high resolution
   avl_cropland_hr_tmp <- new.magpie(getCells(avl_cropland_hr), getYears(lr), marginal_land)
-  avl_cropland_hr_tmp[, getYears(lr), ] <- avl_cropland_hr
+  avl_cropland_hr_tmp[, getYears(lr), ] <- avl_cropland_hr[, , marginal_land]
   avl_cropland_hr <- avl_cropland_hr_tmp
   # low resolution
   avl_cropland_lr_tmp <- new.magpie(getCells(avl_cropland_lr), getYears(lr), marginal_land)
-  avl_cropland_lr_tmp[, getYears(lr), ] <- avl_cropland_lr
+  avl_cropland_lr_tmp[, getYears(lr), marginal_land] <- avl_cropland_lr[, , marginal_land]
   avl_cropland_lr <- avl_cropland_lr_tmp
 
 
@@ -182,6 +171,20 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_l
     }
   }
 
+  # correct for urban land to constrain the calculation of the allocation weight
+  # high resolution
+  land_non_urban_hr <- (dimSums(x_ini_hr, dim = 3) - x_ini_hr[, , "urban"])
+  getCells(land_non_urban_hr) <- getCells(avl_cropland_hr)
+  # low resolution
+  land_non_urban_lr <- (dimSums(x_ini_lr, dim = 3) - x_ini_lr[, , "urban"])
+  # where available cropland is larger than total non urban land chose the smaller value [pmin()]
+  for (t in 1:nyears(lr)) {
+    avl_cropland_hr_tmp[,t , ] <- pmin(avl_cropland_hr[,t , ], land_non_urban_hr)
+    avl_cropland_lr_tmp[,t , ] <- pmin(avl_cropland_lr[,t , ], land_non_urban_lr)
+  }
+  avl_cropland_hr <- avl_cropland_hr_tmp
+  avl_cropland_lr <- avl_cropland_lr_tmp
+ 
   # compute available cropland for expansion in each time step
   cropland_remain_lr <- avl_cropland_lr[, , marginal_land] - lr[, , "crop"]
   getNames(cropland_remain_lr) <- "crop"
