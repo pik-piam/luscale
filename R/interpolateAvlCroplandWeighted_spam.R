@@ -1,4 +1,4 @@
-#' interpolateAvlCroplandWeighted
+#' interpolateAvlCroplandWeighted_spam
 #'
 #' Disaggregates a modelled time series of land pools after optimisation from the model resolution (low resolution)
 #' to the resolution of the land initialisation data set (high resolution), based on a spam matrix and available
@@ -63,7 +63,7 @@
 #' @param x_ini_lr The low resolution distribution of x before model optimization.
 #' @param x_ini_hr The initial high resolution distribution of x (land-use initialisation) before model optimization.
 #' @param avl_cropland_hr The area of available cropland at the high resolution.
-#' @param map A relation map between low and high resolution
+#' @param spam The spam file (sum) that is to be used for disaggregation.
 #' @param marginal_land Depending on the cropland suitability data, standard options are
 #' \itemize{
 #' \item \code{"all_marginal"}: Cropland can be allocated to marginal land
@@ -79,12 +79,11 @@
 #' @export
 #' @author Patrick von Jeetze
 #' @importFrom magclass is.magpie nregions nyears getNames getYears mbind dimSums setYears getYears new.magpie where
-#' @importFrom madrat toolAggregate
-#' @seealso \code{\link{interpolate2}}
-#' \code{\link{toolAggregate}}
+#' @seealso \code{\link{interpolate}}
+#' \code{\link{speed_aggregate}}
 #' @examples
 #' \dontrun{
-#' a <- interpolateAvlCroplandWeighted(
+#' a <- interpolateAvlCroplandWeighted_spam(
 #'   x = land,
 #'   x_ini_lr = land_ini_lr,
 #'   x_ini_hr = land_ini_hr,
@@ -94,7 +93,7 @@
 #' )
 #' }
 #'
-interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_hr, map,
+interpolateAvlCroplandWeighted_spam <- function(x, x_ini_lr, x_ini_hr, avl_cropland_hr, spam,
                                            marginal_land = "all_marginal", set_aside_shr = 0,
                                            set_aside_fader = NULL, year_ini = "y1985", unit = "Mha") {
 
@@ -103,8 +102,7 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   if (nregions(x) != nregions(x_ini_lr)) stop("x and x_ini_lr have to be of the same spatial aggregation")
   if (nyears(x_ini_lr) > 1 || nyears(x_ini_hr) > 1) stop("Initialization data must only have one timestep")
   if (!all(getNames(x) == getNames(x_ini_lr)) || !all(getNames(x) == getNames(x_ini_hr))) stop("dimnames[[3]] of x, x_ini_lr and x_ini_hr have to be the same")
-  if (!file.exists(map)) stop("relation map file ", map, " not found")
-  
+
   # ========================================================================
   # prepare data for land allocation
   # ========================================================================
@@ -161,31 +159,37 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
 
   # correct for urban land to constrain the calculation of the allocation weight
   # high resolution
-  land_non_urban_hr <- dimSums(x_ini_hr, dim = 3) - x_ini_hr[, , "urban"]
-  getCells(avl_cropland_hr) <- getCells(avl_cropland_hr_tmp) <- getCells(land_non_urban_hr)
+  land_non_urban_hr <- (dimSums(x_ini_hr, dim = 3) - x_ini_hr[, , "urban"])
+  getCells(land_non_urban_hr) <- getCells(avl_cropland_hr)
   # where available cropland is larger than total non urban land chose the smaller value [pmin()]
   for (t in 1:nyears(lr)) {
     avl_cropland_hr_tmp[,t , ] <- pmin(avl_cropland_hr[,t , ], land_non_urban_hr)
   }
   avl_cropland_hr <- avl_cropland_hr_tmp
 
+  # get spam file
+  if (is.character(spam)) {
+    if (!file.exists(spam)) stop("spam file ", spam, " not found")
+    rel <- read.spam(spam)
+  }
+
   #------------------------------------------------------------------------
   # disaggregate low resolution output data to be used in calculations
   #------------------------------------------------------------------------
 
   # total land expansion and reduction at low resolution
-  land_reduc_lr_dagg <- toolAggregate(land_reduc_lr, map, from = "cluster", to = "cell")
-  land_expan_lr_dagg <- toolAggregate(land_expan_lr, map, from = "cluster", to = "cell")
+  land_reduc_lr_dagg <- speed_aggregate(land_reduc_lr, t(rel))
+  land_expan_lr_dagg <- speed_aggregate(land_expan_lr, t(rel))
   # total amount of cropland at low resolution
-  land_lr_dagg <- toolAggregate(lr, map, from = "cluster", to = "cell")
+  land_lr_dagg <- speed_aggregate(lr, t(rel))
 
   # ========================================================================
   # allocate cropland at high res (hr)
   # ========================================================================
 
   # create new magpie object for cropland allocation (high resolution)
-  cropland_hr <- new.magpie(getCells(avl_cropland_hr), getYears(lr), "crop")
-  getCells(x_ini_hr) <- getCells(avl_cropland_hr)
+  cropland_hr <- new.magpie(getCells(land_expan_lr_dagg), getYears(lr), "crop")
+  getCells(x_ini_hr) <- getCells(land_expan_lr_dagg)
   cropland_hr[, year_ini, ] <- x_ini_hr[, , "crop"]
 
   for (t in 2:nyears(cropland_hr)) {
@@ -197,8 +201,8 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     cropland_hr[, t, "crop"] <- shr_prev_cropland_hr * avl_cropland_hr[, t, ]
     
     # sum temporary non-cropland land pool at low resolution to compare them with the land pools in x
-    tmp_cropland_lr <- toolAggregate(cropland_hr[, t, "crop"] * 1e+10, map, from = "cell", to = "cluster")
-    tmp_cropland_lr_dagg <- toolAggregate(tmp_cropland_lr, map, from = "cluster", to = "cell")
+    tmp_cropland_lr <- speed_aggregate(cropland_hr[, t, "crop"] * 1e+10, rel)
+    tmp_cropland_lr_dagg <- speed_aggregate(tmp_cropland_lr, t(rel))
     tmp_cropland_lr_dagg <- tmp_cropland_lr_dagg / 1e+10
     
     # calculate the residual difference that still needs to be allocated
@@ -224,8 +228,8 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     cropland_remain_hr <- (avl_cropland_hr[, t, ] - cropland_hr[, t, "crop"]) 
     
     # sum remaining cropland in the current time step to calculate expansion weight
-    tmp_remain_lr <- toolAggregate(cropland_remain_hr * 1e+10,  map, from = "cell", to = "cluster")
-    tmp_remain_lr_dagg <- toolAggregate(tmp_remain_lr, map, from = "cluster", to = "cell")
+    tmp_remain_lr <- speed_aggregate(cropland_remain_hr * 1e+10, rel)
+    tmp_remain_lr_dagg <- speed_aggregate(tmp_remain_lr, t(rel))
     tmp_remain_lr_dagg <- tmp_remain_lr_dagg/1e+10
     
     # calculate the expansion weight for the residual expansion
@@ -282,8 +286,8 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     land_nocrop_hr[where_crop_noexpan, t, "primforest"] <- land_nocrop_hr[where_crop_noexpan, t - 1, "primforest"]
 
     # sum temporary primary forest pool at low resolution to compare it with the pool in x
-    tmp_land_primforest_lr <- toolAggregate(land_nocrop_hr[, t, "primforest"] * 1e+10,  map, from = "cell", to = "cluster")
-    tmp_land_primforest_lr_dagg <- toolAggregate(tmp_land_primforest_lr, map, from = "cluster", to = "cell")
+    tmp_land_primforest_lr <- speed_aggregate(land_nocrop_hr[, t, "primforest"] * 1e+10, rel)
+    tmp_land_primforest_lr_dagg <- speed_aggregate(tmp_land_primforest_lr, t(rel))
     tmp_land_primforest_lr_dagg <- tmp_land_primforest_lr_dagg / 1e+10
 
     # calculate the residual difference that still needs to be allocated
@@ -335,8 +339,8 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     land_nocrop_hr[, t, secd_veg] <- shr_prev_nocrop_veg_hr * land_tot_secd_veg_hr[, t, ]
     
     # sum temporary non-cropland land pool at low resolution to compare them with the land pools in x
-    tmp_land_nocrop_lr <- toolAggregate(land_nocrop_hr[, t, secd_veg] * 1e+10, map, from = "cell", to = "cluster")
-    tmp_land_nocrop_lr_dagg <- toolAggregate(tmp_land_nocrop_lr, map, from = "cluster", to = "cell")
+    tmp_land_nocrop_lr <- speed_aggregate(land_nocrop_hr[, t, secd_veg] * 1e+10, rel)
+    tmp_land_nocrop_lr_dagg <- speed_aggregate(tmp_land_nocrop_lr, t(rel))
     tmp_land_nocrop_lr_dagg <- tmp_land_nocrop_lr_dagg / 1e+10
     
     # calculate the residual difference that still needs to be allocated
