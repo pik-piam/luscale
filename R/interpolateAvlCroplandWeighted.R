@@ -71,7 +71,7 @@
 #' \item \code{"no_marginal"}: Marginal land is fully excluded from cropland
 #' }
 #' @param set_aside_shr Share of available cropland that is witheld for other land cover types
-#' @param set_aside_fader Fader for share of set aside policy
+#' @param set_aside_fader Fader for share of set aside policy.
 #' @param year_ini Timestep that is assumed for the initial distributions \code{x_ini_hr} and \code{x_ini_lr}.
 #' @param unit Unit of the output. "Mha" or "share"
 #' @return The disaggregated MAgPIE object containing x_ini_hr as first
@@ -91,6 +91,19 @@
 #'   avl_cropland_hr = "avl_cropland_0.5.mz",
 #'   spam = "0.5-to-c200_sum.spam",
 #'   marginal_land = "all_marginal"
+#' )
+#' 
+#' saf <- read.magpie("f30_set_aside_fader.csv")[,,"by2030"]
+#' 
+#' b <- interpolateAvlCroplandWeighted(
+#'   x = land,
+#'   x_ini_lr = land_ini_lr,
+#'   x_ini_hr = land_ini_hr,
+#'   avl_cropland_hr = "avl_cropland_0.5.mz",
+#'   spam = "0.5-to-c200_sum.spam",
+#'   marginal_land = "all_marginal",
+#'   set_aside_shr = 0.2,
+#'   set_aside_fader = saf
 #' )
 #' }
 #'
@@ -152,7 +165,14 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
 
 
   if (set_aside_shr != 0 & is.null(set_aside_fader)) stop("Share of withheld cropland given, but no policy fader for target year provided")
-  if (set_aside_shr != 0 & !is.null(set_aside_fader)) {
+  if (set_aside_shr != 0 & !is.null(set_aside_fader) & is.magpie(set_aside_fader)) {
+    if (ndata(set_aside_fader) != 1) stop("set_aside_fader has too many data dimensions. Please select one target year only for this disaggregation.")
+    # correct available cropland with policy restriction
+    for (t in 1:nyears(lr)) {
+      avl_cropland_hr[, t, ] <- avl_cropland_hr[, t, ] * (1 - set_aside_shr * set_aside_fader[, getYears(lr)[t], ])
+    }
+  } else if (set_aside_shr != 0 & !is.null(set_aside_fader) & !is.magpie(set_aside_fader)) {
+    if (ncol(set_aside_fader) != 1) stop("set_aside_fader has too many columns. Please select one target year only for this disaggregation.")
     # correct available cropland with policy restriction
     for (t in 1:nyears(lr)) {
       avl_cropland_hr[, t, ] <- avl_cropland_hr[, t, ] * (1 - set_aside_shr * set_aside_fader[getYears(lr)[t], ])
