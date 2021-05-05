@@ -19,33 +19,33 @@
 #'
 #' 1. The share of cropland in terms of total available cropland is calculated at the previous time step and
 #' then multiplied by the available cropland at the current time step (as available cropland can change over time
-#' - e.g. by policy restriction as can be specified in \code{set_aside_shr}). This temporary cropland pool is then 
-#' compared to the low resolution cropland pool and the residual area of cropland expansion and reduction is 
+#' - e.g. by policy restriction as can be specified in \code{set_aside_shr}). This temporary cropland pool is then
+#' compared to the low resolution cropland pool and the residual area of cropland expansion and reduction is
 #' determined.
 #'
 #' 2. In order to allocate residual area of cropland expansion and reduction, for each grid cell at high resolution
 #' expansion and reduction weights are calculated and multiplied by the residual area:
 #' \itemize{
 #' \item The reduction weight is given by the ratio between the amount of cropland per grid cell and the total area
-#' of the temporary cropland at the low resolution spatial unit. This assumes that the cropland reduction is equally 
+#' of the temporary cropland at the low resolution spatial unit. This assumes that the cropland reduction is equally
 #' distributed among all high resolution grid cells.
 #' \item The expansion weight is calculated as the ratio between the remaining cropland at the grid cell level
-#' (high resolution) and the overall remaining cropland at the low resolution spatial unit in the current time step. 
+#' (high resolution) and the overall remaining cropland at the low resolution spatial unit in the current time step.
 #' The remaining cropland given by the difference between the available cropland and the temporaryl cropland pool
 #' minus urban land, since it assumed that cropland cannot be allocated to urban land.
 #' }
-#' 
+#'
 #' 3. Following the cropland allocation, the land area for the remaining non-cropland vegetation pools is calculated
 #' by substracting the allocated cropland and urban land areas from the total land area in each grid cell.
 #'
 #' 4. The non-cropland vegetation pool at the high resolution (except of primary forest), calculated in step 3., is
 #' then multiplied by the respective shares of the remaining non-cropland vegetation pools at the previous time step
 #' (temporary allocation). Similar to the cropland allocation, is not sufficient to also account for changes within
-#' these land pools. Therefore, the temporarily allocated non-cropland pools are, once again, compared with the pools 
-#' at low resolution. The residual area of land expansion and reduction is then allocated by based on reduction and 
-#' expansion weights, similar as in 2.. The reduction weight is calculated as the ratio between the given temporary 
-#' land pool at high resolution and total temporary land pool at low resolution. The expansion weight is calculated 
-#' as the ratio between the remaining land to be filled in each land pool and the total amount of residual land to 
+#' these land pools. Therefore, the temporarily allocated non-cropland pools are, once again, compared with the pools
+#' at low resolution. The residual area of land expansion and reduction is then allocated by based on reduction and
+#' expansion weights, similar as in 2.. The reduction weight is calculated as the ratio between the given temporary
+#' land pool at high resolution and total temporary land pool at low resolution. The expansion weight is calculated
+#' as the ratio between the remaining land to be filled in each land pool and the total amount of residual land to
 #' be allocated in the current time step.
 #'
 #' 5. Primary forest is treated in a slightly different way, as primary forest cannot be expanded over time. In
@@ -67,7 +67,7 @@
 #' @param marginal_land Depending on the cropland suitability data, standard options are
 #' \itemize{
 #' \item \code{"all_marginal"}: Cropland can be allocated to marginal land
-#' \item \code{"half_marginal"}: Half of the marginal land is excluded from cropland allocation
+#' \item \code{"q33_marginal"}: The bottom tertile of the marginal land area is excluded
 #' \item \code{"no_marginal"}: Marginal land is fully excluded from cropland
 #' }
 #' @param set_aside_shr Share of available cropland that is witheld for other land cover types
@@ -92,9 +92,9 @@
 #'   spam = "0.5-to-c200_sum.spam",
 #'   marginal_land = "all_marginal"
 #' )
-#' 
+#'
 #' saf <- read.magpie("f30_set_aside_fader.csv")[,,"by2030"]
-#' 
+#'
 #' b <- interpolateAvlCroplandWeighted(
 #'   x = land,
 #'   x_ini_lr = land_ini_lr,
@@ -117,7 +117,7 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   if (nyears(x_ini_lr) > 1 || nyears(x_ini_hr) > 1) stop("Initialization data must only have one timestep")
   if (!all(getNames(x) == getNames(x_ini_lr)) || !all(getNames(x) == getNames(x_ini_hr))) stop("dimnames[[3]] of x, x_ini_lr and x_ini_hr have to be the same")
   if (!file.exists(map)) stop("relation map file ", map, " not found")
-  
+
   # ========================================================================
   # prepare data for land allocation
   # ========================================================================
@@ -209,50 +209,50 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   cropland_hr[, year_ini, ] <- x_ini_hr[, , "crop"]
 
   for (t in 2:nyears(cropland_hr)) {
-    
+
     # calculate share of non-cropland vegetation pools in previous time step
     shr_prev_cropland_hr <- cropland_hr[, t - 1, "crop"] / (avl_cropland_hr[, t - 1, ])
     shr_prev_cropland_hr[is.na(shr_prev_cropland_hr) | is.infinite(shr_prev_cropland_hr)] <- 0
     # multiply shares of non-cropland pools in previous time step with available land in current time step
     cropland_hr[, t, "crop"] <- shr_prev_cropland_hr * avl_cropland_hr[, t, ]
-    
+
     # sum temporary non-cropland land pool at low resolution to compare them with the land pools in x
     tmp_cropland_lr <- toolAggregate(cropland_hr[, t, "crop"] * 1e+10, map, from = "cell", to = "cluster")
     tmp_cropland_lr_dagg <- toolAggregate(tmp_cropland_lr, map, from = "cluster", to = "cell")
     tmp_cropland_lr_dagg <- tmp_cropland_lr_dagg / 1e+10
-    
+
     # calculate the residual difference that still needs to be allocated
     residual_diff_lr <- land_lr_dagg[, t, "crop"] - tmp_cropland_lr_dagg
     # calculate the residual land reduction (absolute)
     residual_reduc_lr <- residual_diff_lr
     residual_reduc_lr[residual_reduc_lr > 0] <- 0
     residual_reduc_lr <- abs(residual_reduc_lr)
-    
+
     # calculate the allocation weight for the residual land reduction:
     # divide temporay non-croplad pools at high resolution by sum of the temporary at low resolution
     crop_reduc_weight <- cropland_hr[, t, "crop"] / (tmp_cropland_lr_dagg)
     crop_reduc_weight[is.na(crop_reduc_weight) | is.infinite(crop_reduc_weight)] <- 0
-    
+
     # allocate the residual non-cropland pool reduction
     cropland_hr[, t, "crop"] <- cropland_hr[, t, "crop"] - residual_reduc_lr * crop_reduc_weight
-    
+
     # calculate the residual land expansion
     residual_expan_lr <- residual_diff_lr
     residual_expan_lr[residual_expan_lr < 0] <- 0
-    
+
     # calculate the remaining available land at high resolution
-    cropland_remain_hr <- (avl_cropland_hr[, t, ] - cropland_hr[, t, "crop"]) 
-    
+    cropland_remain_hr <- (avl_cropland_hr[, t, ] - cropland_hr[, t, "crop"])
+
     # sum remaining cropland in the current time step to calculate expansion weight
     tmp_remain_lr <- toolAggregate(cropland_remain_hr * 1e+10,  map, from = "cell", to = "cluster")
     tmp_remain_lr_dagg <- toolAggregate(tmp_remain_lr, map, from = "cluster", to = "cell")
     tmp_remain_lr_dagg <- tmp_remain_lr_dagg/1e+10
-    
+
     # calculate the expansion weight for the residual expansion
     # divide the available land by the total area of the residual expansion at low resolution
     crop_expan_weight <- cropland_remain_hr / tmp_remain_lr_dagg
     crop_expan_weight[is.na(crop_expan_weight) | is.infinite(crop_expan_weight)] <- 0
-    
+
     # allocate the residual non-cropland pool expansion
     cropland_hr[, t, "crop"] <- cropland_hr[, t , "crop"] + residual_expan_lr * crop_expan_weight
   }
@@ -347,45 +347,45 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   #------------------------------------------------------------------------
 
   for (t in 2:nyears(land_nocrop_hr)) {
-    
+
     # calculate share of non-cropland vegetation pools in previous time step
     shr_prev_nocrop_veg_hr <- land_nocrop_hr[, t - 1, secd_veg] / (land_tot_secd_veg_hr[, t - 1, ])
     shr_prev_nocrop_veg_hr[is.na(shr_prev_nocrop_veg_hr) | is.infinite(shr_prev_nocrop_veg_hr)] <- 0
     # multiply shares of non-cropland pools in previous time step with available land in current time step
     land_nocrop_hr[, t, secd_veg] <- shr_prev_nocrop_veg_hr * land_tot_secd_veg_hr[, t, ]
-    
+
     # sum temporary non-cropland land pool at low resolution to compare them with the land pools in x
     tmp_land_nocrop_lr <- toolAggregate(land_nocrop_hr[, t, secd_veg] * 1e+10, map, from = "cell", to = "cluster")
     tmp_land_nocrop_lr_dagg <- toolAggregate(tmp_land_nocrop_lr, map, from = "cluster", to = "cell")
     tmp_land_nocrop_lr_dagg <- tmp_land_nocrop_lr_dagg / 1e+10
-    
+
     # calculate the residual difference that still needs to be allocated
     residual_diff_lr <- land_lr_dagg[, t, secd_veg] - tmp_land_nocrop_lr_dagg
     # calculate the residual land reduction (absolute)
     residual_reduc_lr <- residual_diff_lr
     residual_reduc_lr[residual_reduc_lr > 0] <- 0
     residual_reduc_lr <- abs(residual_reduc_lr)
-    
+
     # calculate the allocation weight for the residual land reduction:
     # divide temporay non-croplad pools at high resolution by sum of the temporary at low resolution
     nocrop_reduc_weight <- land_nocrop_hr[, t, secd_veg] / (tmp_land_nocrop_lr_dagg)
     nocrop_reduc_weight[is.na(nocrop_reduc_weight) | is.infinite(nocrop_reduc_weight)] <- 0
-    
+
     # allocate the residual non-cropland pool reduction
     land_nocrop_hr[, t, secd_veg] <- land_nocrop_hr[, t, secd_veg] - residual_reduc_lr * nocrop_reduc_weight
-    
+
     # calculate the residual land expansion
     residual_expan_lr <- residual_diff_lr
     residual_expan_lr[residual_expan_lr < 0] <- 0
-    
+
     # calculate the remaining available land at high resolution
     nocrop_avail_hr <- (land_tot_secd_veg_hr[, t, ] - dimSums(land_nocrop_hr[, t, secd_veg], dim = 3)) * (residual_expan_lr / dimSums(residual_expan_lr, dim = 3))
-    
+
     # calculate the expansion weight for the residual expansion
     # divide the available land by the total area of the residual expansion at low resolution
     nocrop_expan_weight <- nocrop_avail_hr / (residual_expan_lr)
     nocrop_expan_weight[is.na(nocrop_expan_weight) | is.infinite(nocrop_expan_weight)] <- 0
-    
+
     # allocate the residual non-cropland pool expansion
     land_nocrop_hr[, t, secd_veg] <- land_nocrop_hr[, t, secd_veg] + residual_expan_lr * nocrop_expan_weight
   }
