@@ -89,7 +89,7 @@
 #'   x_ini_lr = land_ini_lr,
 #'   x_ini_hr = land_ini_hr,
 #'   avl_cropland_hr = "avl_cropland_0.5.mz",
-#'   spam = "0.5-to-c200_sum.spam",
+#'   map = "clustermap_rev4.59_c200_h12.rds",
 #'   marginal_land = "all_marginal"
 #' )
 #'
@@ -100,7 +100,7 @@
 #'   x_ini_lr = land_ini_lr,
 #'   x_ini_hr = land_ini_hr,
 #'   avl_cropland_hr = "avl_cropland_0.5.mz",
-#'   spam = "0.5-to-c200_sum.spam",
+#'   map = "clustermap_rev4.59_c200_h12.rds",
 #'   marginal_land = "all_marginal",
 #'   set_aside_shr = 0.2,
 #'   set_aside_fader = saf
