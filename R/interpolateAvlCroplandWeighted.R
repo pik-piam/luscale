@@ -1,7 +1,7 @@
 #' interpolateAvlCroplandWeighted
 #'
 #' Disaggregates a modelled time series of land pools after optimisation from the model resolution (low resolution)
-#' to the resolution of the land initialisation data set (high resolution), based on a spam matrix and available
+#' to the resolution of the land initialisation data set (high resolution), based on a relation map and available
 #' cropland.
 #'
 #' The function requires the following input data:
@@ -12,7 +12,7 @@
 #' before the optimisation. They only contain the initial time step, but share the three-dimensional structure
 #' with \code{x}.
 #' \item  \code{avl_cropland_hr} provides information about the amount (Mha) of available cropland at high resolution.
-#' \item \code{spam} spam matrix containing information about cell belongings between the high and low resolution.
+#' \item \code{map} relation map containing information about cell belongings between the high and low resolution.
 #' }
 #'
 #' The weighted disaggregation works as follows:
