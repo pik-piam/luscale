@@ -70,7 +70,8 @@
 #' \item \code{"q33_marginal"}: The bottom tertile of the marginal land area is excluded
 #' \item \code{"no_marginal"}: Marginal land is fully excluded from cropland
 #' }
-#' @param set_aside_shr Share of available cropland that is witheld for other land cover types
+#' @param set_aside_shr Share of available cropland that is witheld for other land cover types. Can be supplied as a
+#' single value or as a magpie object containing different values in each iso country.
 #' @param set_aside_fader Fader for share of set aside policy.
 #' @param year_ini Timestep that is assumed for the initial distributions \code{x_ini_hr} and \code{x_ini_lr}.
 #' @param unit Unit of the output. "Mha" or "share"
@@ -79,7 +80,7 @@
 #' @export
 #' @author Patrick von Jeetze
 #' @importFrom magclass is.magpie nregions nyears getNames getYears mbind dimSums setYears getYears new.magpie where
-#' @importFrom madrat toolAggregate
+#' @importFrom madrat toolAggregate toolGetMapping
 #' @seealso \code{\link{interpolate2}}
 #' \code{\link{toolAggregate}}
 #' @examples
@@ -93,7 +94,7 @@
 #'   marginal_land = "all_marginal"
 #' )
 #'
-#' saf <- read.magpie("f30_set_aside_fader.csv")[,,"by2030"]
+#' saf <- read.magpie("f30_set_aside_fader.csv")[, , "by2030"]
 #'
 #' b <- interpolateAvlCroplandWeighted(
 #'   x = land,
@@ -103,6 +104,24 @@
 #'   map = "clustermap_rev4.59_c200_h12.rds",
 #'   marginal_land = "all_marginal",
 #'   set_aside_shr = 0.2,
+#'   set_aside_fader = saf
+#' )
+#'
+#' iso <- readGDX(gdx, "iso")
+#' set_aside_iso <- readGDX(gdx, "policy_countries30")
+#' set_aside_select <- readGDX(gdx, "s30_set_aside_shr")
+#' set_aside_noselect <- readGDX(gdx, "s30_set_aside_shr_noselect")
+#' set_aside_shr <- new.magpie(iso, fill = set_aside_noselect)
+#' set_aside_shr[set_aside_iso, , ] <- set_aside_select
+#'
+#' c <- interpolateAvlCroplandWeighted(
+#'   x = land,
+#'   x_ini_lr = land_ini_lr,
+#'   x_ini_hr = land_ini_hr,
+#'   avl_cropland_hr = "avl_cropland_0.5.mz",
+#'   map = "clustermap_rev4.59_c200_h12.rds",
+#'   marginal_land = "all_marginal",
+#'   set_aside_shr = set_aside_shr,
 #'   set_aside_fader = saf
 #' )
 #' }
@@ -163,15 +182,24 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   avl_cropland_hr_tmp[, getYears(lr), ] <- avl_cropland_hr[, , marginal_land]
   avl_cropland_hr <- avl_cropland_hr_tmp
 
+  if (any(set_aside_shr != 0) & is.null(set_aside_fader)) stop("Share of withheld cropland given, but no policy fader for target year provided")
 
-  if (set_aside_shr != 0 & is.null(set_aside_fader)) stop("Share of withheld cropland given, but no policy fader for target year provided")
-  if (set_aside_shr != 0 & !is.null(set_aside_fader) & is.magpie(set_aside_fader)) {
+  if (length(map) == 1) {
+    map <- toolGetMapping(map, where = "local")
+  }
+  if (length(set_aside_shr == 1)) {
+    set_aside_shr <- new.magpie(map[, "cell"], fill = set_aside_shr)
+  } else {
+    set_aside_shr <- toolAggregate(set_aside_shr[unique(map[, "country"]), , ], map, from = "country", to = "cell")
+  }
+
+  if (!is.null(set_aside_fader) & is.magpie(set_aside_fader)) {
     if (ndata(set_aside_fader) != 1) stop("set_aside_fader has too many data dimensions. Please select one target year only for this disaggregation.")
     # correct available cropland with policy restriction
     for (t in 1:nyears(lr)) {
       avl_cropland_hr[, t, ] <- avl_cropland_hr[, t, ] * (1 - set_aside_shr * set_aside_fader[, getYears(lr)[t], ])
     }
-  } else if (set_aside_shr != 0 & !is.null(set_aside_fader) & !is.magpie(set_aside_fader)) {
+  } else if (!is.null(set_aside_fader) & !is.magpie(set_aside_fader)) {
     if (ncol(set_aside_fader) != 1) stop("set_aside_fader has too many columns. Please select one target year only for this disaggregation.")
     # correct available cropland with policy restriction
     for (t in 1:nyears(lr)) {
@@ -185,7 +213,7 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   getCells(avl_cropland_hr) <- getCells(avl_cropland_hr_tmp) <- getCells(land_non_urban_hr)
   # where available cropland is larger than total non urban land chose the smaller value [pmin()]
   for (t in 1:nyears(lr)) {
-    avl_cropland_hr_tmp[,t , ] <- pmin(avl_cropland_hr[,t , ], land_non_urban_hr)
+    avl_cropland_hr_tmp[, t, ] <- pmin(avl_cropland_hr[, t, ], land_non_urban_hr)
   }
   avl_cropland_hr <- avl_cropland_hr_tmp
 
@@ -244,9 +272,9 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     cropland_remain_hr <- (avl_cropland_hr[, t, ] - cropland_hr[, t, "crop"])
 
     # sum remaining cropland in the current time step to calculate expansion weight
-    tmp_remain_lr <- toolAggregate(cropland_remain_hr * 1e+10,  map, from = "cell", to = "cluster")
+    tmp_remain_lr <- toolAggregate(cropland_remain_hr * 1e+10, map, from = "cell", to = "cluster")
     tmp_remain_lr_dagg <- toolAggregate(tmp_remain_lr, map, from = "cluster", to = "cell")
-    tmp_remain_lr_dagg <- tmp_remain_lr_dagg/1e+10
+    tmp_remain_lr_dagg <- tmp_remain_lr_dagg / 1e+10
 
     # calculate the expansion weight for the residual expansion
     # divide the available land by the total area of the residual expansion at low resolution
@@ -254,7 +282,7 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     crop_expan_weight[is.na(crop_expan_weight) | is.infinite(crop_expan_weight)] <- 0
 
     # allocate the residual non-cropland pool expansion
-    cropland_hr[, t, "crop"] <- cropland_hr[, t , "crop"] + residual_expan_lr * crop_expan_weight
+    cropland_hr[, t, "crop"] <- cropland_hr[, t, "crop"] + residual_expan_lr * crop_expan_weight
   }
 
   # ========================================================================
@@ -302,7 +330,7 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     land_nocrop_hr[where_crop_noexpan, t, "primforest"] <- land_nocrop_hr[where_crop_noexpan, t - 1, "primforest"]
 
     # sum temporary primary forest pool at low resolution to compare it with the pool in x
-    tmp_land_primforest_lr <- toolAggregate(land_nocrop_hr[, t, "primforest"] * 1e+10,  map, from = "cell", to = "cluster")
+    tmp_land_primforest_lr <- toolAggregate(land_nocrop_hr[, t, "primforest"] * 1e+10, map, from = "cell", to = "cluster")
     tmp_land_primforest_lr_dagg <- toolAggregate(tmp_land_primforest_lr, map, from = "cluster", to = "cell")
     tmp_land_primforest_lr_dagg <- tmp_land_primforest_lr_dagg / 1e+10
 
