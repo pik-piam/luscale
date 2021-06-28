@@ -19,7 +19,7 @@
 #' yet more complicated to use.
 #' @author Benjamin Bodirsky, Ulrich Kreidenweis
 #' @export
-#' @importFrom magclass is.magpie unwrap as.magpie old_dim_convention
+#' @importFrom magclass is.magpie unwrap as.magpie
 #' @keywords array
 #################################
 #### rename by query         ####
@@ -29,7 +29,22 @@
 # Version 1.01: minor change: also allow data.frames as query - Ulrich Kreidenweis
 
 rename_dimnames<-function(data,dim=1,query=NULL,from=NULL,to=NULL) {
-  if(dim-floor(dim)>0){ dim=old_dim_convention(dim) }  # check whether old naming convention is active
+  .old_dim_convention<-function(dim){
+    dim<-as.character(dim)
+    elemsplit <- as.numeric(as.vector(strsplit(dim,".",fixed=TRUE)[[1]]))
+    if (length(elemsplit)==1) {stop("Format has to be x.y")}
+    if (elemsplit[1]==1) {
+      if (elemsplit[2]==1){newdim=1} else {stop("old dim convention has only 1.1, 2.1 and 3.x")}
+    } else if (elemsplit[1]==2) {
+      if (elemsplit[2]==1){newdim=2} else {stop("old dim convention has only 1.1, 2.1 and 3.x")}
+    } else if (elemsplit[1]==3) {
+      if (elemsplit[2]==0) {stop("3.0 not supported")}
+      newdim=2+elemsplit[2]
+    } else {stop("dim cannot be higher than 3.x")}
+    return(newdim)
+  }
+  
+  if(dim-floor(dim)>0){ dim <- .old_dim_convention(dim) }  # check whether old naming convention is active
   if(is.data.frame(query)) {
     query <- sapply(query,as.character)
   }
