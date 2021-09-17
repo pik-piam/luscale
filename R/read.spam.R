@@ -43,6 +43,7 @@
 #' # [2,]    1    0
 #' # [3,]    1    1
 #' # Class 'spam'
+#' file.remove("test.spam")
 #' 
 #' }
 #spam_in_out provides functions to read and write spam objects from/into files.
