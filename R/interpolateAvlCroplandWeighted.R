@@ -63,6 +63,7 @@
 #' @param x_ini_lr The low resolution distribution of x before model optimization.
 #' @param x_ini_hr The initial high resolution distribution of x (land-use initialisation) before model optimization.
 #' @param avl_cropland_hr The area of available cropland at the high resolution.
+#' @param urban_land_hr Either a magpie object of the cellular urban input data, or "static" string
 #' @param map A relation map between low and high resolution
 #' @param marginal_land Depending on the cropland suitability data, standard options are
 #' \itemize{
@@ -78,8 +79,8 @@
 #' @return The disaggregated MAgPIE object containing x_ini_hr as first
 #' timestep
 #' @export
-#' @author Patrick von Jeetze
-#' @importFrom magclass is.magpie nregions nyears getNames getYears mbind dimSums setYears getYears new.magpie where
+#' @author Patrick von Jeetze, David Chen
+#' @importFrom magclass is.magpie nregions nyears getItems add_columns getNames getYears mbind dimSums setYears getYears new.magpie where
 #' @importFrom madrat toolAggregate toolGetMapping
 #' @seealso \code{\link{interpolate2}}
 #' \code{\link{toolAggregate}}
@@ -126,12 +127,12 @@
 #' )
 #' }
 #'
-interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_hr, map,
+interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_hr, map, urban_land_hr,
                                            marginal_land = "all_marginal", set_aside_shr = 0,
                                            set_aside_fader = NULL, year_ini = "y1985", unit = "Mha") {
 
   # test whether data can be handled by function
-  if (!is.magpie(x) || !is.magpie(x_ini_lr) || !is.magpie(x_ini_hr)) stop("x, x_ini_lr and x_ini_hr have to be magpie objects")
+  if (!is.magpie(x) || !is.magpie(x_ini_lr) || !is.magpie(x_ini_hr) || (!is.magpie(urban_land_hr) & urban_land_hr != "static")) stop("x, x_ini_lr and x_ini_hr, urban_land_hr have to be magpie objects")
   if (nregions(x) != nregions(x_ini_lr)) stop("x and x_ini_lr have to be of the same spatial aggregation")
   if (nyears(x_ini_lr) > 1 || nyears(x_ini_hr) > 1) stop("Initialization data must only have one timestep")
   if (!all(getNames(x) == getNames(x_ini_lr)) || !all(getNames(x) == getNames(x_ini_hr))) stop("dimnames[[3]] of x, x_ini_lr and x_ini_hr have to be the same")
@@ -208,6 +209,8 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   }
 
   # correct for urban land to constrain the calculation of the allocation weight
+  # This is due to inconsistency in input dataset where in some regions urban land is already subtracted from avl Cropland
+  # In other regions it is not subtracted even when urban centres there exist
   # high resolution
   land_non_urban_hr <- dimSums(x_ini_hr, dim = 3) - x_ini_hr[, , "urban"]
   getCells(avl_cropland_hr) <- getCells(avl_cropland_hr_tmp) <- getCells(land_non_urban_hr)
@@ -216,6 +219,30 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     avl_cropland_hr_tmp[, t, ] <- pmin(avl_cropland_hr[, t, ], land_non_urban_hr)
   }
   avl_cropland_hr <- avl_cropland_hr_tmp
+
+  #
+  ##### remove urban cells from potentially available cropland, if not static ###
+  #
+   if (is.magpie(urban_land_hr)){
+
+    #check if urban land output and input correspond at low res level
+    urban_input_lr <-  toolAggregate(urban_land_hr, map, from = "cell", to = "cluster")
+    testurb    <- x[,,"urban"]  - urban_input_lr[getItems(x,dim=1),getYears(x),]
+
+     if (max(testurb) > 0.05*diff(range(urban_input_lr)) || min(testurb) < (-0.05*diff(range(urban_input_lr)))){
+        warning("Cluster level differences of urban land between magpie and input data are
+          greater than 5% of the total range of urban land values in a cluster.
+          Consider the urban implementation, maybe something's wrong.")}
+
+    # remove urban land expansion from future available cropland
+    urb_ex <- urban_land_hr - setYears(x_ini_hr[,,"urban"], NULL)
+    urb_ex[urb_ex < 0 ] <- 0 #negatives from rounding
+
+    avl_cropland_hr[,2:nyears(avl_cropland_hr),] <-  avl_cropland_hr[,2:nyears(avl_cropland_hr),] - setNames(urb_ex[, getYears(avl_cropland_hr)[-1],],NULL)
+    avl_cropland_hr[avl_cropland_hr < 0] <- 0
+  }
+
+
 
   #------------------------------------------------------------------------
   # disaggregate low resolution output data to be used in calculations
@@ -285,6 +312,7 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     cropland_hr[, t, "crop"] <- cropland_hr[, t, "crop"] + residual_expan_lr * crop_expan_weight
   }
 
+
   # ========================================================================
   # allocate non-cropland pools
   # ========================================================================
@@ -292,7 +320,18 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   # calculate total land area in each grid cell (high resolution)
   land_tot_hr <- setYears(dimSums(x_ini_hr, dim = 3), NULL)
   # calculate non-cropland vegetation pool after disaggregation
-  land_tot_nocrop_veg_hr <- setNames(setYears(land_tot_hr - x_ini_hr[, , "urban"] - cropland_hr, getYears(cropland_hr)), NULL)
+  #sum urban and cropland
+  if (is.magpie(urban_land_hr)){
+     if (as.integer(gsub("y", "", year_ini)) < getYears(urban_land_hr, as.integer = TRUE)[1]){
+     urban_land_hr <- add_columns(urban_land_hr, addnm=year_ini, dim=2.1, fill=0)
+     urban_land_hr <- urban_land_hr[,sort(getYears(urban_land_hr, as.integer = TRUE)),]
+     urban_land_hr[,year_ini,] <- urban_land_hr[,2,]
+
+   land_tot_nocrop_veg_hr <- setNames(setYears(land_tot_hr - urban_land_hr[,getYears(cropland_hr),] - cropland_hr, getYears(cropland_hr)), NULL)
+   }} else {
+   land_tot_nocrop_veg_hr <- setNames(setYears(land_tot_hr - x_ini_hr[, , "urban"] - cropland_hr, getYears(cropland_hr)), NULL)
+     }
+
   land_tot_nocrop_veg_hr[land_tot_nocrop_veg_hr < 0] <- 0
 
   # define sets used during land allocation
@@ -303,11 +342,13 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   land_nocrop_hr <- new.magpie(getCells(cropland_hr), getYears(cropland_hr), nocrop_pools)
   land_nocrop_hr[, year_ini, nocrop_pools] <- x_ini_hr[, , nocrop_pools]
 
-  #------------------------------------------------------------------------
-  # allocate urban (constant)
-  #------------------------------------------------------------------------
 
-  land_nocrop_hr[, , "urban"] <- x_ini_hr[, , "urban"]
+  #------------------------------------------------------------------------
+  # allocate urban (exogenous, dataset read in from input data)
+  #------------------------------------------------------------------------
+  if(is.magpie(urban_land_hr)){
+  land_nocrop_hr[, , "urban"] <- urban_land_hr[, getYears(land_nocrop_hr), "urban"]
+  } else {  land_nocrop_hr[, , "urban"] <- x_ini_hr[, , "urban"] }
 
   #------------------------------------------------------------------------
   # allocate primary forest
@@ -315,19 +356,19 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
 
   for (t in 2:nyears(land_nocrop_hr)) {
 
-    # check where there was cropland expansion
-    where_crop_expan <- where(cropland_hr[, t, ] > cropland_hr[, t - 1, ])[["true"]][["regions"]]
+    # check where there was cropland and urban expansion
+    where_expan <- where(cropland_hr[, t, ] > cropland_hr[, t - 1, ] | land_nocrop_hr[, t, "urban"] >  land_nocrop_hr[, t - 1, "urban"])[["true"]][["regions"]]
     # calculate share of primary forest in previous time step
     shr_prev_primforest_hr <- land_nocrop_hr[, t - 1, "primforest"] / (land_tot_nocrop_veg_hr[, t - 1, ])
     shr_prev_primforest_hr[is.na(shr_prev_primforest_hr) | is.infinite(shr_prev_primforest_hr)] <- 0
     # multiply share of primary forest in previous time step with available land in current time step
     # to allocate primary forest in cells with cropland expansion
-    land_nocrop_hr[where_crop_expan, t, "primforest"] <- shr_prev_primforest_hr[where_crop_expan, , ] * land_tot_nocrop_veg_hr[where_crop_expan, t, ]
+    land_nocrop_hr[where_expan, t, "primforest"] <- shr_prev_primforest_hr[where_expan, , ] * land_tot_nocrop_veg_hr[where_expan, t, ]
 
-    # check in which cells there was no cropland expansion
-    where_crop_noexpan <- where(cropland_hr[, t, ] > cropland_hr[, t - 1, ])[["false"]][["regions"]]
+    # check in which cells there was no cropland nor urban expansion
+    where_noexpan <- where(cropland_hr[, t, ] > cropland_hr[, t - 1, ] | land_nocrop_hr[, t, "urban"] >  land_nocrop_hr[, t - 1, "urban"] )[["false"]][["regions"]]
     # allocate the area of primary forest in the previous time step to those cells
-    land_nocrop_hr[where_crop_noexpan, t, "primforest"] <- land_nocrop_hr[where_crop_noexpan, t - 1, "primforest"]
+    land_nocrop_hr[where_noexpan, t, "primforest"] <- land_nocrop_hr[where_noexpan, t - 1, "primforest"]
 
     # sum temporary primary forest pool at low resolution to compare it with the pool in x
     tmp_land_primforest_lr <- toolAggregate(land_nocrop_hr[, t, "primforest"] * 1e+10, map, from = "cell", to = "cluster")
@@ -353,13 +394,20 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     primf_residual_alloc_lr <- primf_residual_diff_lr
     primf_residual_alloc_lr[primf_residual_alloc_lr < 0] <- 0
 
-    # calculate the remaining available for primary land at high resolution
-    # primary forest cannot be bigger in the current time step than in the previous time step
-    primf_avail_hr <- land_nocrop_hr[, t - 1, "primforest"] - land_nocrop_hr[, t, "primforest"]
+    ## calculate the remaining available for primary land at high resolution
+     # primary forest cannot be bigger in the current time step than in the previous time step
+     primf_avail_hr <- land_nocrop_hr[, t - 1, "primforest"] - land_nocrop_hr[, t, "primforest"]
+
+     #Check if there is still  land available in this cell for the amount of forest required
+     land_left_hr <-  setNames(land_tot_hr - setYears(dimSums(land_nocrop_hr[,t , c("urban","primforest")],dim=3),NULL) -
+                                                     setNames(setYears(cropland_hr[,t,],NULL), NULL), NULL)
+     # weight by either gap between current tmp and previous time step, or by amount of land remaining
+     primf_avail_hr_constr <- pmin(primf_avail_hr, land_left_hr)
+     primf_avail_hr_constr[primf_avail_hr_constr < 0 ] <- 0
 
     # calculate the allocatiob weight for the residual primary forest land
     # divide the available land by the total area of the residual allocation at low resolution
-    primf_alloc_weight <- primf_avail_hr / (primf_residual_alloc_lr)
+    primf_alloc_weight <- primf_avail_hr_constr / (primf_residual_alloc_lr)
     primf_alloc_weight[is.na(primf_alloc_weight) | is.infinite(primf_alloc_weight)] <- 0
 
     # allocate residual primary forest

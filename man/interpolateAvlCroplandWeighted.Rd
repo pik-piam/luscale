@@ -10,6 +10,7 @@ interpolateAvlCroplandWeighted(
   x_ini_hr,
   avl_cropland_hr,
   map,
+  urban_land_hr,
   marginal_land = "all_marginal",
   set_aside_shr = 0,
   set_aside_fader = NULL,
@@ -27,6 +28,8 @@ interpolateAvlCroplandWeighted(
 \item{avl_cropland_hr}{The area of available cropland at the high resolution.}
 
 \item{map}{A relation map between low and high resolution}
+
+\item{urban_land_hr}{Either a magpie object of the cellular urban input data, or "static" string}
 
 \item{marginal_land}{Depending on the cropland suitability data, standard options are
 \itemize{
@@ -158,5 +161,5 @@ c <- interpolateAvlCroplandWeighted(
 \code{\link{toolAggregate}}
 }
 \author{
-Patrick von Jeetze
+Patrick von Jeetze, David Chen
 }
