@@ -127,7 +127,7 @@
 #' )
 #' }
 #'
-interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_hr, map, urban_land_hr,
+interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_hr, map, urban_land_hr = "static",
                                            marginal_land = "all_marginal", set_aside_shr = 0,
                                            set_aside_fader = NULL, year_ini = "y1985", unit = "Mha") {
 
