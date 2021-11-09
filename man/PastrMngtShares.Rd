@@ -23,6 +23,22 @@ capture cells that are unfeasible.
 This function calculates pasture management patters based on linear programing accounting for
 costs of management, area available and production demands.
 }
+\details{
+Data requirement
+1. Costs for each level of pasture management
+2. maximum production of each cell (the same as the maximum yields)
+3. available pasture area in each cell
+
+ Equations
+ X[i] * C[i] = cost
+ sum(X[i]) == avl_area
+ X[i] * Y[i] == production
+
+Where: 
+X : Pasture management areas
+C : cost of production per type of management
+Y : Pasture yields per type of managment
+}
 \examples{
 \dontrun{
 PastrMngtShares(cost, yields, avl_area, production)
