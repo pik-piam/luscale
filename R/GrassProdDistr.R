@@ -3,25 +3,26 @@
 #' This function calculates pasture management patters based on linear programing accounting for
 #' costs of management, area available and production demands.
 #'
-#' @usage GrassProdDisagg(grass_prod_lr,land_hr, weight_factor, map_file, lpjml_yields)
+#' @usage GrassProdDisagg(grass_prod_lr,land_hr, weight_factor, map_file, lpjml_yields, ite)
 #' @param grass_prod_lr grassland production in low resolution to be disaggregated
 #' @param land_hr Magpie object with celular cost for each pasture management type
 #' @param weight_factor Magpie object with celular yields for each management type
 #' @param map_file cluster mappint to cells and regions
 #' @param lpjml_yields Lpjml yeilds used for magpie optimization
+#' @param ite number of redistribution iterations
 #' @return Mapie object with the total pasture areas optimized for fulfulling pasture demand in the available areas. An extra dimention is added to
 #' capture cells that are infeasible.
 #' @author Marcos Alves
 #' @examples
 #' \dontrun{
-#' GrassProdDisagg(grass_prod_lr,land_hr, weight_factor, map_file, lpjml_yields)
+#' GrassProdDisagg(grass_prod_lr,land_hr, weight_factor, map_file, lpjml_yields, ite)
 #' }
 #'
 #' @importFrom lpSolve lp
 #' @export
 #'
 
-GrassProdDisagg <- function(grass_prod_lr,land_hr, weight_factor, map_file, lpjml_yields) {
+GrassProdDisagg <- function(grass_prod_lr,land_hr, weight_factor, map_file, lpjml_yields, ite = 10) {
   poten_prod <- lpjml_yields * land_hr
   
   name <- getItems(land_hr, dim = 3)
@@ -69,7 +70,7 @@ GrassProdDisagg <- function(grass_prod_lr,land_hr, weight_factor, map_file, lpjm
   excess_prod[excess_prod < 0] <- 0
   count <- 0
 
-  while (sum(excess_prod) > 5 & count < 10) {
+  while (sum(excess_prod) > 5 & count < ite) {
     remain_prod <- grass_prod_hr - excess_prod
     excess_prod_cluster <- toolAggregate(excess_prod, rel = map_file, from = "cell", to = "region")
     red_prod_cell <- toolAggregate(excess_prod_cluster,

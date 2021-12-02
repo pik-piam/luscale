@@ -4,7 +4,7 @@
 \alias{GrassProdDisagg}
 \title{Disaggregate managed pastures areas}
 \usage{
-GrassProdDisagg(grass_prod_lr,land_hr, weight_factor, map_file, lpjml_yields)
+GrassProdDisagg(grass_prod_lr,land_hr, weight_factor, map_file, lpjml_yields, ite)
 }
 \arguments{
 \item{grass_prod_lr}{grassland production in low resolution to be disaggregated}
@@ -16,6 +16,8 @@ GrassProdDisagg(grass_prod_lr,land_hr, weight_factor, map_file, lpjml_yields)
 \item{map_file}{cluster mappint to cells and regions}
 
 \item{lpjml_yields}{Lpjml yeilds used for magpie optimization}
+
+\item{ite}{number of redistribution iterations}
 }
 \value{
 Mapie object with the total pasture areas optimized for fulfulling pasture demand in the available areas. An extra dimention is added to
@@ -27,7 +29,7 @@ costs of management, area available and production demands.
 }
 \examples{
 \dontrun{
-GrassProdDisagg(grass_prod_lr,land_hr, weight_factor, map_file, lpjml_yields)
+GrassProdDisagg(grass_prod_lr,land_hr, weight_factor, map_file, lpjml_yields, ite)
 }
 
 }
