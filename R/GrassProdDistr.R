@@ -76,21 +76,20 @@ GrassProdDisagg <- function(grass_prod_lr,land_hr, weight_factor, map_file, lpjm
     weight2 <- weight
     weight2[remain_prod >= poten_prod] = 0
     # print(paste("maxed:",sum(remain_prod >= poten_prod)))
-    excess_prod_cluster <- toolAggregate(excess_prod, rel = map_file, from = "cell", to = "cluster")
+    excess_prod_cluster <- toolAggregate(excess_prod, rel = map_file, from = "cell", to = "region")
     if(count < ite-1){
       red_prod_cell <- toolAggregate(excess_prod_cluster,
                                      rel = map_file,
                                      weight = weight2,
-                                     from = "cluster", to = "cell"
+                                     from = "region", to = "cell"
       )
 
     } else {
       red_prod_cell <- toolAggregate(excess_prod_cluster,
                                      rel = map_file,
                                      weight = weight,
-                                     from = "cluster", to = "cell"
+                                     from = "region", to = "cell"
       )
-      print("bingo")
     }
 
     grass_prod_hr <- red_prod_cell + remain_prod
