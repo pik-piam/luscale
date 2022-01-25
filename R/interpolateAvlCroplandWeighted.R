@@ -81,7 +81,7 @@
 #' @export
 #' @author Patrick von Jeetze, David Chen
 #' @importFrom magclass is.magpie nregions nyears getItems add_columns getNames getYears mbind dimSums setYears getYears new.magpie where
-#' @importFrom madrat toolAggregate toolGetMapping
+#' @importFrom madrat toolAggregate toolGetMapping toolConditionalReplace
 #' @seealso \code{\link{interpolate2}}
 #' \code{\link{toolAggregate}}
 #' @examples
@@ -479,6 +479,8 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   if (unit == "share") {
     # divide land pools by total amount of land per grid cell
     out <- hr / dimSums(hr, dim = 3)
+    # cell GRL.13164 has a total land area of 0
+    out <- toolConditionalReplace(out, "is.na()", replaceby = 0)
   } else if (unit == "Mha") {
     out <- hr
   }

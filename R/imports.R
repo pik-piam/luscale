@@ -1,0 +1,2 @@
+#' @import methods magclass
+NULL
