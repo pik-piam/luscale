@@ -97,7 +97,7 @@
 #'   marginal_land = "all_marginal"
 #' )
 #'
-#' saf <- read.magpie("f30_policy_fader.csv")[, , "by2030"]
+#' sf <- read.magpie("f30_scenario_fader.csv")[, , "by2030"]
 #'
 #' b <- interpolateAvlCroplandWeighted(
 #'   x = land,
@@ -107,7 +107,7 @@
 #'   map = "clustermap_rev4.59_c200_h12.rds",
 #'   marginal_land = "all_marginal",
 #'   snv_pol_shr = 0.2,
-#'   snv_pol_fader = saf
+#'   snv_pol_fader = sf
 #' )
 #'
 #' iso <- readGDX(gdx, "iso")
