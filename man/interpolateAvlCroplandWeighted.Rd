@@ -12,10 +12,12 @@ interpolateAvlCroplandWeighted(
   map,
   urban_land_hr = "static",
   marginal_land = "all_marginal",
-  set_aside_shr = 0,
-  set_aside_fader = NULL,
+  snv_pol_shr = 0,
+  snv_pol_fader = NULL,
   year_ini = "y1985",
-  unit = "Mha"
+  unit = "Mha",
+  set_aside_shr = NULL,
+  set_aside_fader = NULL
 )
 }
 \arguments{
@@ -38,14 +40,18 @@ interpolateAvlCroplandWeighted(
 \item \code{"no_marginal"}: Marginal land is fully excluded from cropland
 }}
 
-\item{set_aside_shr}{Share of available cropland that is witheld for other land cover types. Can be supplied as a
+\item{snv_pol_shr}{Share of available cropland that is witheld for other land cover types. Can be supplied as a
 single value or as a magpie object containing different values in each iso country.}
 
-\item{set_aside_fader}{Fader for share of set aside policy.}
+\item{snv_pol_fader}{Fader for share of set aside policy.}
 
 \item{year_ini}{Timestep that is assumed for the initial distributions \code{x_ini_hr} and \code{x_ini_lr}.}
 
 \item{unit}{Unit of the output. "Mha" or "share"}
+
+\item{set_aside_shr}{depreciated, stop using.}
+
+\item{set_aside_fader}{depreciated, stop using.}
 }
 \value{
 The disaggregated MAgPIE object containing x_ini_hr as first
@@ -72,7 +78,7 @@ The weighted disaggregation works as follows:
 
 1. The share of cropland in terms of total available cropland is calculated at the previous time step and
 then multiplied by the available cropland at the current time step (as available cropland can change over time
-- e.g. by policy restriction as can be specified in \code{set_aside_shr}). This temporary cropland pool is then
+- e.g. by policy restriction as can be specified in \code{snv_pol_shr}). This temporary cropland pool is then
 compared to the low resolution cropland pool and the residual area of cropland expansion and reduction is
 determined.
 
@@ -123,7 +129,7 @@ a <- interpolateAvlCroplandWeighted(
   marginal_land = "all_marginal"
 )
 
-saf <- read.magpie("f30_set_aside_fader.csv")[, , "by2030"]
+saf <- read.magpie("f30_policy_fader.csv")[, , "by2030"]
 
 b <- interpolateAvlCroplandWeighted(
   x = land,
@@ -132,16 +138,16 @@ b <- interpolateAvlCroplandWeighted(
   avl_cropland_hr = "avl_cropland_0.5.mz",
   map = "clustermap_rev4.59_c200_h12.rds",
   marginal_land = "all_marginal",
-  set_aside_shr = 0.2,
-  set_aside_fader = saf
+  snv_pol_shr = 0.2,
+  snv_pol_fader = saf
 )
 
 iso <- readGDX(gdx, "iso")
 set_aside_iso <- readGDX(gdx, "policy_countries30")
-set_aside_select <- readGDX(gdx, "s30_set_aside_shr")
-set_aside_noselect <- readGDX(gdx, "s30_set_aside_shr_noselect")
-set_aside_shr <- new.magpie(iso, fill = set_aside_noselect)
-set_aside_shr[set_aside_iso, , ] <- set_aside_select
+set_aside_select <- readGDX(gdx, "s30_snv_shr")
+set_aside_noselect <- readGDX(gdx, "s30_snv_shr_noselect")
+snv_pol_shr <- new.magpie(iso, fill = snv_noselect)
+snv_pol_shr[set_aside_iso, , ] <- set_aside_select
 
 c <- interpolateAvlCroplandWeighted(
   x = land,
@@ -150,8 +156,8 @@ c <- interpolateAvlCroplandWeighted(
   avl_cropland_hr = "avl_cropland_0.5.mz",
   map = "clustermap_rev4.59_c200_h12.rds",
   marginal_land = "all_marginal",
-  set_aside_shr = set_aside_shr,
-  set_aside_fader = saf
+  snv_pol_shr = snv_pol_shr,
+  snv_pol_fader = saf
 )
 }
 

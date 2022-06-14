@@ -19,7 +19,7 @@
 #'
 #' 1. The share of cropland in terms of total available cropland is calculated at the previous time step and
 #' then multiplied by the available cropland at the current time step (as available cropland can change over time
-#' - e.g. by policy restriction as can be specified in \code{set_aside_shr}). This temporary cropland pool is then
+#' - e.g. by policy restriction as can be specified in \code{snv_pol_shr}). This temporary cropland pool is then
 #' compared to the low resolution cropland pool and the residual area of cropland expansion and reduction is
 #' determined.
 #'
@@ -71,11 +71,13 @@
 #' \item \code{"q33_marginal"}: The bottom tertile of the marginal land area is excluded
 #' \item \code{"no_marginal"}: Marginal land is fully excluded from cropland
 #' }
-#' @param set_aside_shr Share of available cropland that is witheld for other land cover types. Can be supplied as a
+#' @param snv_pol_shr Share of available cropland that is witheld for other land cover types. Can be supplied as a
 #' single value or as a magpie object containing different values in each iso country.
-#' @param set_aside_fader Fader for share of set aside policy.
+#' @param snv_pol_fader Fader for share of set aside policy.
 #' @param year_ini Timestep that is assumed for the initial distributions \code{x_ini_hr} and \code{x_ini_lr}.
 #' @param unit Unit of the output. "Mha" or "share"
+#' @param set_aside_shr depreciated, stop using.
+#' @param set_aside_fader depreciated, stop using.
 #' @return The disaggregated MAgPIE object containing x_ini_hr as first
 #' timestep
 #' @export
@@ -95,7 +97,7 @@
 #'   marginal_land = "all_marginal"
 #' )
 #'
-#' saf <- read.magpie("f30_set_aside_fader.csv")[, , "by2030"]
+#' saf <- read.magpie("f30_policy_fader.csv")[, , "by2030"]
 #'
 #' b <- interpolateAvlCroplandWeighted(
 #'   x = land,
@@ -104,16 +106,16 @@
 #'   avl_cropland_hr = "avl_cropland_0.5.mz",
 #'   map = "clustermap_rev4.59_c200_h12.rds",
 #'   marginal_land = "all_marginal",
-#'   set_aside_shr = 0.2,
-#'   set_aside_fader = saf
+#'   snv_pol_shr = 0.2,
+#'   snv_pol_fader = saf
 #' )
 #'
 #' iso <- readGDX(gdx, "iso")
 #' set_aside_iso <- readGDX(gdx, "policy_countries30")
-#' set_aside_select <- readGDX(gdx, "s30_set_aside_shr")
-#' set_aside_noselect <- readGDX(gdx, "s30_set_aside_shr_noselect")
-#' set_aside_shr <- new.magpie(iso, fill = set_aside_noselect)
-#' set_aside_shr[set_aside_iso, , ] <- set_aside_select
+#' set_aside_select <- readGDX(gdx, "s30_snv_shr")
+#' set_aside_noselect <- readGDX(gdx, "s30_snv_shr_noselect")
+#' snv_pol_shr <- new.magpie(iso, fill = snv_noselect)
+#' snv_pol_shr[set_aside_iso, , ] <- set_aside_select
 #'
 #' c <- interpolateAvlCroplandWeighted(
 #'   x = land,
@@ -122,14 +124,19 @@
 #'   avl_cropland_hr = "avl_cropland_0.5.mz",
 #'   map = "clustermap_rev4.59_c200_h12.rds",
 #'   marginal_land = "all_marginal",
-#'   set_aside_shr = set_aside_shr,
-#'   set_aside_fader = saf
+#'   snv_pol_shr = snv_pol_shr,
+#'   snv_pol_fader = saf
 #' )
 #' }
 #'
 interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_hr, map, urban_land_hr = "static",
-                                           marginal_land = "all_marginal", set_aside_shr = 0,
-                                           set_aside_fader = NULL, year_ini = "y1985", unit = "Mha") {
+                                           marginal_land = "all_marginal", snv_pol_shr = 0,
+                                           snv_pol_fader = NULL, year_ini = "y1985", unit = "Mha",set_aside_shr=NULL,set_aside_fader=NULL) {
+  if(!is.null(set_aside_shr)|!is.null(set_aside_fader)){
+    warning("arguments set_aside_shr and set_aside_fader are depreciated, stop using them")
+    snv_pol_fader <- set_aside_fader
+    snv_pol_shr <- set_aside_shr
+  }
 
   # test whether data can be handled by function
   if (!is.magpie(x) || !is.magpie(x_ini_lr) || !is.magpie(x_ini_hr) || (!is.magpie(urban_land_hr) & urban_land_hr != "static")) stop("x, x_ini_lr and x_ini_hr, urban_land_hr have to be magpie objects")
@@ -183,28 +190,28 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   avl_cropland_hr_tmp[, getYears(lr), ] <- avl_cropland_hr[, , marginal_land]
   avl_cropland_hr <- avl_cropland_hr_tmp
 
-  if (any(set_aside_shr != 0) & is.null(set_aside_fader)) stop("Share of withheld cropland given, but no policy fader for target year provided")
+  if (any(snv_pol_shr != 0) & is.null(snv_pol_fader)) stop("Share of withheld cropland given, but no policy fader for target year provided")
 
   if (length(map) == 1) {
     map <- toolGetMapping(map, where = "local")
   }
-  if (length(set_aside_shr == 1)) {
-    set_aside_shr <- new.magpie(map[, "cell"], fill = set_aside_shr)
+  if (length(snv_pol_shr == 1)) {
+    snv_pol_shr <- new.magpie(map[, "cell"], fill = snv_pol_shr)
   } else {
-    set_aside_shr <- toolAggregate(set_aside_shr[unique(map[, "country"]), , ], map, from = "country", to = "cell")
+    snv_pol_shr <- toolAggregate(snv_pol_shr[unique(map[, "country"]), , ], map, from = "country", to = "cell")
   }
 
-  if (!is.null(set_aside_fader) & is.magpie(set_aside_fader)) {
-    if (ndata(set_aside_fader) != 1) stop("set_aside_fader has too many data dimensions. Please select one target year only for this disaggregation.")
+  if (!is.null(snv_pol_fader) & is.magpie(snv_pol_fader)) {
+    if (ndata(snv_pol_fader) != 1) stop("snv_pol_fader has too many data dimensions. Please select one target year only for this disaggregation.")
     # correct available cropland with policy restriction
     for (t in 1:nyears(lr)) {
-      avl_cropland_hr[, t, ] <- avl_cropland_hr[, t, ] * (1 - set_aside_shr * set_aside_fader[, getYears(lr)[t], ])
+      avl_cropland_hr[, t, ] <- avl_cropland_hr[, t, ] * (1 - snv_pol_shr * snv_pol_fader[, getYears(lr)[t], ])
     }
-  } else if (!is.null(set_aside_fader) & !is.magpie(set_aside_fader)) {
-    if (ncol(set_aside_fader) != 1) stop("set_aside_fader has too many columns. Please select one target year only for this disaggregation.")
+  } else if (!is.null(snv_pol_fader) & !is.magpie(snv_pol_fader)) {
+    if (ncol(snv_pol_fader) != 1) stop("snv_pol_fader has too many columns. Please select one target year only for this disaggregation.")
     # correct available cropland with policy restriction
     for (t in 1:nyears(lr)) {
-      avl_cropland_hr[, t, ] <- avl_cropland_hr[, t, ] * (1 - set_aside_shr * set_aside_fader[getYears(lr)[t], ])
+      avl_cropland_hr[, t, ] <- avl_cropland_hr[, t, ] * (1 - snv_pol_shr * snv_pol_fader[getYears(lr)[t], ])
     }
   }
 
