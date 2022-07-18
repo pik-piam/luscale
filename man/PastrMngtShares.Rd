@@ -4,7 +4,7 @@
 \alias{PastrMngtShares}
 \title{Disaggregate managed pastures areas}
 \usage{
-PastrMngtShares(cost, yields, avl_area, production)
+PastrMngtShares(cost, yields, avl_area, production, eps)
 }
 \arguments{
 \item{cost}{Magpie object with cellular cost for each pasture management type}
@@ -14,6 +14,8 @@ PastrMngtShares(cost, yields, avl_area, production)
 \item{avl_area}{Magpie object with cellular data on the total managed pasture areas available}
 
 \item{production}{Magpie object with cellular data on the total pasture demand}
+
+\item{eps}{epsilon Percent relaxation for area and production}
 }
 \value{
 Mapie object with the total pasture areas optimized to fulfill pasture demand in the available areas. An extra dimension is added to
@@ -31,8 +33,10 @@ Data requirement
 
  Equations
  X[i] * C[i] = cost
- sum(X[i]) == avl_area
- X[i] * Y[i] == production
+ sum(X[i]) >= avl_area * (1 - eps)
+ sum(X[i]) <= avl_area * (1 + eps)
+ X[i] * Y[i] >= production * (1 - eps)
+ X[i] * Y[i] <= production * (1 + eps)
 
 Where: 
 X : Pasture management areas
@@ -41,7 +45,7 @@ Y : Pasture yields per type of managment
 }
 \examples{
 \dontrun{
-PastrMngtShares(cost, yields, avl_area, production)
+PastrMngtShares(cost, yields, avl_area, production, eps)
 }
 
 }
