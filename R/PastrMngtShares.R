@@ -72,19 +72,16 @@ PastrMngtShares <- function(cost, yields, avl_area, production, eps) {
         f.obj <- x[seq_len(n)]
         f.con <- rbind(
           rep(1, n),
-          rep(1, n),
           x[seq(n + 1, n * 2, 1)],
           x[seq(n + 1, n * 2, 1)]
         )
         f.dir <- c(
-          ">=",
           "<=",
           ">=",
           "<="
         )
         f.rhs <- c(
-          x[i - 1] * (1 - eps),
-          x[i - 1] * (1 + eps),
+          x[i - 1],
           x[i] * (1 - eps),
           x[i] * (1 + eps)
         )
