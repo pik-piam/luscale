@@ -76,7 +76,7 @@ PastrMngtShares <- function(cost, yields, avl_area, production, eps) {
           x[seq(n + 1, n * 2, 1)]
         )
         f.dir <- c(
-          "<=",
+          "==",
           ">=",
           "<="
         )
