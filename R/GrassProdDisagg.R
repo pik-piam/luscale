@@ -72,29 +72,18 @@ GrassProdDisagg <- function(grass_prod_lr,land_hr, weight_factor, map_file, lpjm
   area  <-  land_hr > 0
   remain_prod <- grass_prod_hr - excess_prod
 
-  print(paste("Excess poll"," -> ","Regular pool"," -> ", "Erased biomass"))
+  print(paste("Excess pool"," -> ","Regular pool"," -> ", "Erased biomass"))
   print(paste(sum(excess_prod)," -> ",sum(remain_prod), " -> ", 0))
   while (sum(excess_prod) > 1 & count < ite) {
     reserve  <-  poten_prod > remain_prod * (1 + 0.01) # solution cells (partial)
     avl_reseve_areas  <-  area * reserve * (excess_prod == 0) # all areas where there is production but no excess and productivity and reserve capacity
     avl_area_weight <- weight * (avl_reseve_areas > 0)
-
-
-
     excess_prod_cluster <- toolAggregate(excess_prod, rel = map_file, from = "cell", to = "country")
       red_prod_cell <- toolAggregate(excess_prod_cluster,
                                      rel = map_file,
                                      weight = avl_area_weight,
                                      from = "country", to = "cell"
       )
-
-    #reserve_cty <- (avl_reseve_areas > 0) * (poten_prod - remain_prod)
-    #reserve_cty <- sapply(sort(getRegions(reserve_cty)), function(x) dimSums(reserve_cty[x,,], dim=c(1)))
-    #excess_prod_cty <- sapply(sort(getRegions(excess_prod_cluster)), function(x) dimSums(excess_prod_cluster[x,,], dim=c(1)))
-    #print(round(data.frame(reserve_cty-excess_prod_cty)))
-    #print(paste0("total reserve: ", sum(reserve_cty)))
-    #print(paste0("total excess: ", sum(excess_prod_cty)))
-
     grass_prod_hr_tmp <- red_prod_cell + remain_prod
     excess_prod <- grass_prod_hr_tmp - poten_prod
     excess_prod[excess_prod < 0] <- 0
@@ -103,5 +92,6 @@ GrassProdDisagg <- function(grass_prod_lr,land_hr, weight_factor, map_file, lpjm
     print(paste(sum(excess_prod)," -> ",sum(remain_prod), " -> ", sum(grass_prod_hr - grass_prod_hr_tmp)))
     count <- count + 1
   }
+  print(paste0("Percent biomass erased: ", round(sum(grass_prod_hr - grass_prod_hr_tmp) / sum(grass_prod_hr), 2) * 100, "%" ))
   return(remain_prod)
 }
