@@ -17,7 +17,9 @@ interpolateAvlCroplandWeighted(
   year_ini = "y1985",
   unit = "Mha",
   set_aside_shr = NULL,
-  set_aside_fader = NULL
+  set_aside_fader = NULL,
+  wdpa_hr = NULL,
+  consv_prio_hr = NULL
 )
 }
 \arguments{
@@ -52,6 +54,10 @@ single value or as a magpie object containing different values in each iso count
 \item{set_aside_shr}{depreciated, stop using.}
 
 \item{set_aside_fader}{depreciated, stop using.}
+
+\item{wdpa_hr}{WDPA protected areas.}
+
+\item{consv_prio_hr}{Future conservation scenario based on conservation priority area.}
 }
 \value{
 The disaggregated MAgPIE object containing x_ini_hr as first
