@@ -162,7 +162,8 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
 
   # Test if the total sum is constant
   test <- dimSums(lr, dim = c(1, 3))[, 2:nyears(lr), ] - setYears(dimSums(lr, dim = c(1, 3))[, 1:nyears(lr) - 1, ], getYears(lr)[2:nyears(lr)])
-  if (max(test) > 0.1 || min(test) < -0.1) warning("Total stock is not constant over time. See help for details")
+  if (max(test) > 0.1 || min(test) < -0.1) warning("Sum over all land pools in MAgPIE output is not constant over time. See help for details")
+
 
   #------------------------------------------------------------------------
   # calculate land expansion and reduction
