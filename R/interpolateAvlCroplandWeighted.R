@@ -143,7 +143,7 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   }
 
   # test whether data can be handled by function
-  if (!is.magpie(x) || !is.magpie(x_ini_lr) || !is.magpie(x_ini_hr) || (!is.magpie(urban_land_hr) & urban_land_hr != "static")) stop("x, x_ini_lr and x_ini_hr, urban_land_hr have to be magpie objects")
+  if (!is.magpie(x) || !is.magpie(x_ini_lr) || !is.magpie(x_ini_hr) || (!is.magpie(urban_land_hr) && urban_land_hr != "static")) stop("x, x_ini_lr and x_ini_hr, urban_land_hr have to be magpie objects")
   if (nregions(x) != nregions(x_ini_lr)) stop("x and x_ini_lr have to be of the same spatial aggregation")
   if (nyears(x_ini_lr) > 1 || nyears(x_ini_hr) > 1) stop("Initialization data must only have one timestep")
   if (!all(getNames(x) == getNames(x_ini_lr)) || !all(getNames(x) == getNames(x_ini_hr))) stop("dimnames[[3]] of x, x_ini_lr and x_ini_hr have to be the same")
