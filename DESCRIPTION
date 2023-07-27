@@ -1,8 +1,8 @@
 Type: Package
 Package: luscale
+Date: 2023-07-27
 Title: PIK Landuse Group Data Scaling Tools
 Version: 2.27.7
-Date: 2023-07-27
 Authors@R: c(
     person("Jan Philipp", "Dietrich", , "dietrich@pik-potsdam.de", role = c("aut", "cre")),
     person("Benjamin Leon", "Bodirsky", , "bodirsky@pik-potsdam.de", role = "aut"),
@@ -21,7 +21,7 @@ BugReports: https://github.com/pik-piam/luscale/issues
 Depends:
     magclass,
     methods,
-    R(>= 2.10.0)
+    R (>= 2.10.0)
 Imports:
     lpSolve,
     madrat,
