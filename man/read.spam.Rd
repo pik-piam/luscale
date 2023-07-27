@@ -20,7 +20,7 @@ in spam-format}
 Read transformation matrix from file. Data has the following structure:
 \enumerate{ \item one 4byte Integer which contains the number of values
 saved (n) \item n*2 matrix (integer) which contains the indices of the
-spam-object (extracted with triplet(spam\_object)) \item vector with n
+spam-object (extracted with triplet(spam_object)) \item vector with n
 elements (integer) containing the values of the spam-object \item nrows,
 ncols (integer) }
 }

@@ -6,7 +6,7 @@
 \alias{luscale-package}
 \title{luscale: PIK Landuse Group Data Scaling Tools}
 \description{
-A collection of tools which allow to aggregate und disaggregate data in various ways.
+A collection of tools which allow to aggregate and disaggregate data in various ways.
 }
 \seealso{
 Useful links:
