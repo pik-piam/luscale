@@ -168,15 +168,17 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   # transform units for higher accuracy during calculations
   #------------------------------------------------------------------------
 
-  x <- x * 1e+30
-  x_ini_lr <- x_ini_lr * 1e+30
-  lr <- lr * 1e+30
-  x_ini_hr <- x_ini_hr * 1e+30
-  if (is.magpie(avl_cropland_hr)){
-    avl_cropland_hr <- avl_cropland_hr * 1e+30
+  unit_scaler <- 1e+30
+
+  x <- x * unit_scaler
+  x_ini_lr <- x_ini_lr * unit_scaler
+  lr <- lr * unit_scaler
+  x_ini_hr <- x_ini_hr * unit_scaler
+  if (is.magpie(avl_cropland_hr)) {
+    avl_cropland_hr <- avl_cropland_hr * unit_scaler
   }
-  if (is.magpie(urban_land_hr)){
-    urban_land_hr <- urban_land_hr * 1e+30
+  if (is.magpie(urban_land_hr)) {
+    urban_land_hr <- urban_land_hr * unit_scaler
   }
 
   #------------------------------------------------------------------------
@@ -209,7 +211,7 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     if (!file.exists(avl_cropland_hr)) stop("high resolution available cropland data not found")
     # high resolution
     avl_cropland_hr <- read.magpie(avl_cropland_hr)
-    avl_cropland_hr <- avl_cropland_hr * 1e+30
+    avl_cropland_hr <- avl_cropland_hr * unit_scaler
   }
 
   # expand available cropland data over time
@@ -480,7 +482,6 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     # divide temporay primary forest pool at high resolution by sum of the temporary pool at low resolution
     primf_reduc_weight <- land_nocrop_hr[, t, "primforest"] / (tmp_land_primforest_lr_dagg)
     primf_reduc_weight[is.na(primf_reduc_weight) | is.infinite(primf_reduc_weight)] <- 0
-    # primf_reduc_weight[primf_reduc_weight < 0] <- 0
 
     # allocate the residual primary forest reduction
     land_nocrop_hr[, t, "primforest"] <- land_nocrop_hr[, t, "primforest"] - primf_residual_reduc_lr * primf_reduc_weight
@@ -587,9 +588,9 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     # cell GRL.13164 has a total land area of 0
     out <- toolConditionalReplace(out, "is.na()", replaceby = 0)
   } else if (unit == "Mha") {
-    out <- hr / 1e+30
+    out <- hr / unit_scaler
   } else if (unit == "ha") {
-    out <- hr / 1e+24
+    out <- hr / (unit_scaler / 1e+6)
   }
 
   return(out)
