@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it using the metadata from this file.
+type: software
+title: 'luscale: PIK Landuse Group Data Scaling Tools'
+version: 2.27.4
+date-released: '2023-07-27'
+abstract: A collection of tools which allow to aggregate und disaggregate data in
+  various ways.
+authors:
+- family-names: Dietrich
+  given-names: Jan Philipp
+  email: dietrich@pik-potsdam.de
+- family-names: Bodirsky
+  given-names: Benjamin Leon
+  email: bodirsky@pik-potsdam.de
+- family-names: Bonsch
+  given-names: Markus
+- name: Patrick, von Jeetze
+- family-names: Kreidenweiss
+  given-names: Ulrich
+- family-names: Hennig
+  given-names: Roman Julius
+- family-names: Humpenoeder
+  given-names: Florian
+  email: humpenoeder@pik-potsdam.de
+license: BSD-2-Clause
+repository-code: https://github.com/pik-piam/luscale
+doi: 10.5281/zenodo.1158584
+

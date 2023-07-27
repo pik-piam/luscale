@@ -49,7 +49,7 @@ single value or as a magpie object containing different values in each iso count
 
 \item{year_ini}{Timestep that is assumed for the initial distributions \code{x_ini_hr} and \code{x_ini_lr}.}
 
-\item{unit}{Unit of the output. "Mha" or "share"}
+\item{unit}{Unit of the output. "Mha", "ha" or "share"}
 
 \item{set_aside_shr}{depreciated, stop using.}
 
