@@ -12,14 +12,11 @@ interpolateAvlCroplandWeighted(
   map,
   urban_land_hr = "static",
   marginal_land = "all_marginal",
+  land_consv_hr = NULL,
   snv_pol_shr = 0,
   snv_pol_fader = NULL,
   year_ini = "y1985",
-  unit = "Mha",
-  set_aside_shr = NULL,
-  set_aside_fader = NULL,
-  wdpa_hr = NULL,
-  consv_prio_hr = NULL
+  unit = "Mha"
 )
 }
 \arguments{
@@ -42,6 +39,8 @@ interpolateAvlCroplandWeighted(
 \item \code{"no_marginal"}: Marginal land is fully excluded from cropland
 }}
 
+\item{land_consv_hr}{magpie object containing conservation land.}
+
 \item{snv_pol_shr}{Share of available cropland that is witheld for other land cover types. Can be supplied as a
 single value or as a magpie object containing different values in each iso country.}
 
@@ -50,14 +49,6 @@ single value or as a magpie object containing different values in each iso count
 \item{year_ini}{Timestep that is assumed for the initial distributions \code{x_ini_hr} and \code{x_ini_lr}.}
 
 \item{unit}{Unit of the output. "Mha", "ha" or "share"}
-
-\item{set_aside_shr}{depreciated, stop using.}
-
-\item{set_aside_fader}{depreciated, stop using.}
-
-\item{wdpa_hr}{WDPA protected areas.}
-
-\item{consv_prio_hr}{Future conservation scenario based on conservation priority area.}
 }
 \value{
 The disaggregated MAgPIE object containing x_ini_hr as first

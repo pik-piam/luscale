@@ -76,10 +76,7 @@
 #' @param snv_pol_fader Fader for share of set aside policy.
 #' @param year_ini Timestep that is assumed for the initial distributions \code{x_ini_hr} and \code{x_ini_lr}.
 #' @param unit Unit of the output. "Mha", "ha" or "share"
-#' @param wdpa_hr WDPA protected areas.
-#' @param consv_prio_hr Future conservation scenario based on conservation priority area.
-#' @param set_aside_shr depreciated, stop using.
-#' @param set_aside_fader depreciated, stop using.
+#' @param land_consv_hr magpie object containing conservation land.
 #' @return The disaggregated MAgPIE object containing x_ini_hr as first
 #' timestep
 #' @export
@@ -132,16 +129,8 @@
 #' }
 #'
 interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_hr, map, urban_land_hr = "static",
-                                           marginal_land = "all_marginal", snv_pol_shr = 0,
-                                           snv_pol_fader = NULL, year_ini = "y1985", unit = "Mha",
-                                           set_aside_shr = NULL, set_aside_fader = NULL,
-                                           wdpa_hr = NULL, consv_prio_hr = NULL) {
-  if (!is.null(set_aside_shr) | !is.null(set_aside_fader)) {
-    warning("arguments set_aside_shr and set_aside_fader are depreciated, stop using them")
-    snv_pol_fader <- set_aside_fader
-    snv_pol_shr <- set_aside_shr
-  }
-
+                                           marginal_land = "all_marginal", land_consv_hr = NULL, snv_pol_shr = 0,
+                                           snv_pol_fader = NULL, year_ini = "y1985", unit = "Mha") {
   # test whether data can be handled by function
   if (!is.magpie(x) || !is.magpie(x_ini_lr) || !is.magpie(x_ini_hr) || (!is.magpie(urban_land_hr) && urban_land_hr != "static")) stop("x, x_ini_lr and x_ini_hr, urban_land_hr have to be magpie objects")
   if (nregions(x) != nregions(x_ini_lr)) stop("x and x_ini_lr have to be of the same spatial aggregation")
@@ -172,11 +161,22 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
 
   x <- x * unit_scaler
   x_ini_lr <- x_ini_lr * unit_scaler
-  lr <- lr * unit_scaler
   x_ini_hr <- x_ini_hr * unit_scaler
+  lr <- lr * unit_scaler
+
   if (is.magpie(avl_cropland_hr)) {
     avl_cropland_hr <- avl_cropland_hr * unit_scaler
+  } else {
+    if (!file.exists(avl_cropland_hr)) stop("high resolution available cropland data not found")
+    # high resolution
+    avl_cropland_hr <- read.magpie(avl_cropland_hr)
+    avl_cropland_hr <- avl_cropland_hr * unit_scaler
   }
+
+  if (is.magpie(land_consv_hr)) {
+    land_consv_hr <- land_consv_hr[, getYears(x), ] * unit_scaler
+  }
+
   if (is.magpie(urban_land_hr)) {
     urban_land_hr <- urban_land_hr * unit_scaler
   }
@@ -204,15 +204,8 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   }
 
   #------------------------------------------------------------------------
-  # read available cropland data
+  # process available cropland data
   #------------------------------------------------------------------------
-
-  if (!is.magpie(avl_cropland_hr)) {
-    if (!file.exists(avl_cropland_hr)) stop("high resolution available cropland data not found")
-    # high resolution
-    avl_cropland_hr <- read.magpie(avl_cropland_hr)
-    avl_cropland_hr <- avl_cropland_hr * unit_scaler
-  }
 
   # expand available cropland data over time
   # high resolution
@@ -220,44 +213,14 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   avl_cropland_hr_tmp[, getYears(lr), ] <- avl_cropland_hr[, , marginal_land]
   avl_cropland_hr <- avl_cropland_hr_tmp
 
-  ### adjust available cropland based on protected areas
-  if (!is.null(wdpa_hr)) {
-    if (is.character(wdpa_hr)) {
-      if (!file.exists(wdpa_hr)) stop("high resolution protected area data not found")
-      # high resolution
-      wdpa_hr <- read.magpie(wdpa_hr)
-    }
-
-    # create full time series
-    land_consv_hr <- new.magpie(map[, "cell"], getYears(x), getNames(wdpa_hr), fill = wdpa_hr[, nyears(wdpa_hr), ])
-
-    if (!is.null(consv_prio_hr)) {
-      if (is.character(consv_prio_hr)) {
-        if (!file.exists(consv_prio_hr)) stop("high resolution conservation priority data not found")
-        # high resolution
-        consv_prio_hr <- read.magpie(consv_prio_hr)
-      }
-      # add conservation priority areas
-      land_consv_hr <- (land_consv_hr + consv_prio_hr)
-      land_consv_hr[, getYears(wdpa_hr), ] <- wdpa_hr
-    } else {
-      land_consv_hr[, getYears(wdpa_hr), ] <- wdpa_hr
-    }
-
-    land_consv_hr <- dimSums(land_consv_hr[, , "crop", invert = TRUE], dim = 3)
-
-    # due to internal constraints land conservation can be smaller than in the input data
-    # therefore a scaling is applied here to reduce land conservation, where it was
-    # smaller in MAgPIE (this can especially happen, if land restoration is switched off)
-    land_consv_lr <- toolAggregate(land_consv_hr, map, from = "cell", to = "cluster")
-    consv_scaling <- dimSums(x[, , "crop", invert = TRUE], dim = 3) / land_consv_lr
-    consv_scaling[consv_scaling > 1] <- 1
-    consv_scaling <- toolAggregate(consv_scaling, map, from = "cluster", to = "cell")
-    land_consv_hr <- consv_scaling * land_consv_hr
+  ### adjust available cropland based on conservation land
+  if (!is.null(land_consv_hr)) {
+    land_consv_hr <- dimSums(land_consv_hr[, , c("crop", "past"), invert = TRUE], dim = 3)
 
     # calculate total land area in each grid cell (high resolution)
     land_tot_hr <- setYears(dimSums(x_ini_hr, dim = 3), NULL)
     no_consv_hr <- land_tot_hr - land_consv_hr
+    no_consv_hr[no_consv_hr < 0] <- 0
     no_consv_hr <- mbind(setYears(no_consv_hr[, 1, ], year_ini), no_consv_hr)
 
     # Where available cropland is larger than the unprotected area
@@ -357,9 +320,8 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     cropland_hr[, t, "crop"][inacc_hr] <- avl_cropland_hr[, t, ][inacc_hr]
 
     # sum temporary cropland land pool at low resolution to compare them with the land pools in x
-    tmp_cropland_lr <- toolAggregate(cropland_hr[, t, "crop"] * 1e+10, map, from = "cell", to = "cluster")
+    tmp_cropland_lr <- toolAggregate(cropland_hr[, t, "crop"], map, from = "cell", to = "cluster")
     tmp_cropland_lr_dagg <- toolAggregate(tmp_cropland_lr, map, from = "cluster", to = "cell")
-    tmp_cropland_lr_dagg <- tmp_cropland_lr_dagg / 1e+10
 
     # calculate the residual difference that still needs to be allocated
     residual_diff_lr <- land_lr_dagg[, t, "crop"] - tmp_cropland_lr_dagg
@@ -386,9 +348,8 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     cropland_remain_hr <- (avl_cropland_hr[, t, ] - cropland_hr[, t, "crop"])
 
     # sum remaining cropland in the current time step to calculate expansion weight
-    tmp_remain_lr <- toolAggregate(cropland_remain_hr * 1e+10, map, from = "cell", to = "cluster")
+    tmp_remain_lr <- toolAggregate(cropland_remain_hr, map, from = "cell", to = "cluster")
     tmp_remain_lr_dagg <- toolAggregate(tmp_remain_lr, map, from = "cluster", to = "cell")
-    tmp_remain_lr_dagg <- tmp_remain_lr_dagg / 1e+10
 
     # calculate the expansion weight for the residual expansion
     # divide the available land by the total area of the residual expansion at low resolution
@@ -468,9 +429,8 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     land_nocrop_hr[where_noexpan, t, "primforest"] <- land_nocrop_hr[where_noexpan, t - 1, "primforest"]
 
     # sum temporary primary forest pool at low resolution to compare it with the pool in x
-    tmp_land_primforest_lr <- toolAggregate(land_nocrop_hr[, t, "primforest"] * 1e+10, map, from = "cell", to = "cluster")
+    tmp_land_primforest_lr <- toolAggregate(land_nocrop_hr[, t, "primforest"], map, from = "cell", to = "cluster")
     tmp_land_primforest_lr_dagg <- toolAggregate(tmp_land_primforest_lr, map, from = "cluster", to = "cell")
-    tmp_land_primforest_lr_dagg <- tmp_land_primforest_lr_dagg / 1e+10
 
     # calculate the residual difference that still needs to be allocated
     primf_residual_diff_lr <- land_lr_dagg[, t, "primforest"] - tmp_land_primforest_lr_dagg
@@ -535,9 +495,8 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     land_nocrop_hr[, t, secd_veg] <- shr_prev_nocrop_veg_hr * land_tot_secd_veg_hr[, t, ]
 
     # sum temporary non-cropland land pool at low resolution to compare them with the land pools in x
-    tmp_land_nocrop_lr <- toolAggregate(land_nocrop_hr[, t, secd_veg] * 1e+10, map, from = "cell", to = "cluster")
+    tmp_land_nocrop_lr <- toolAggregate(land_nocrop_hr[, t, secd_veg], map, from = "cell", to = "cluster")
     tmp_land_nocrop_lr_dagg <- toolAggregate(tmp_land_nocrop_lr, map, from = "cluster", to = "cell")
-    tmp_land_nocrop_lr_dagg <- tmp_land_nocrop_lr_dagg / 1e+10
 
     # calculate the residual difference that still needs to be allocated
     residual_diff_lr <- land_lr_dagg[, t, secd_veg] - tmp_land_nocrop_lr_dagg
