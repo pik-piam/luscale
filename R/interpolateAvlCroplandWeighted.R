@@ -207,33 +207,36 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   # process available cropland data
   #------------------------------------------------------------------------
 
+  avl_cropland_hr <- avl_cropland_hr[, , marginal_land]
+
+  # calculate total land area in each grid cell (high resolution)
+  land_tot_hr <- setYears(dimSums(x_ini_hr, dim = 3), NULL)
+
+  # --------------------------------------------
   # expand available cropland data over time
-  # high resolution
+  # the available cropland is susequently adjusted
+  # based on conservation land and urban land constraints
   avl_cropland_hr_tmp <- new.magpie(getCells(avl_cropland_hr), getYears(lr), marginal_land)
-  avl_cropland_hr_tmp[, getYears(lr), ] <- avl_cropland_hr[, , marginal_land]
-  avl_cropland_hr <- avl_cropland_hr_tmp
+  avl_cropland_hr_tmp[, getYears(lr), ] <- avl_cropland_hr
 
-  ### adjust available cropland based on conservation land
+  # -------------------------------------------------------
+  # adjust available cropland based on conservation land
   if (!is.null(land_consv_hr)) {
-    land_consv_hr <- dimSums(land_consv_hr[, , c("crop", "past"), invert = TRUE], dim = 3)
+    land_consv_hr <- dimSums(land_consv_hr[, , "crop", invert = TRUE], dim = 3)
 
-    # calculate total land area in each grid cell (high resolution)
-    land_tot_hr <- setYears(dimSums(x_ini_hr, dim = 3), NULL)
     no_consv_hr <- land_tot_hr - land_consv_hr
     no_consv_hr[no_consv_hr < 0] <- 0
     no_consv_hr <- mbind(setYears(no_consv_hr[, 1, ], year_ini), no_consv_hr)
 
     # Where available cropland is larger than the unprotected area
     # replace it with the remaining unprotected area
-    avl_cropland_hr[avl_cropland_hr > no_consv_hr] <- no_consv_hr[avl_cropland_hr > no_consv_hr]
+    avl_cropland_hr_tmp[avl_cropland_hr_tmp > no_consv_hr] <- no_consv_hr[avl_cropland_hr_tmp > no_consv_hr]
   }
 
-  ### adjust available cropland based on SNV policy
+  # ------------------------------------------------
+  # adjust available cropland based on SNV policy
   if (any(snv_pol_shr != 0) & is.null(snv_pol_fader)) stop("Share of withheld cropland given, but no policy fader for target year provided")
 
-  if (length(map) == 1) {
-    map <- toolGetMapping(map, where = "local")
-  }
   if (length(snv_pol_shr == 1)) {
     snv_pol_shr <- new.magpie(map[, "cell"], fill = snv_pol_shr)
   } else {
@@ -244,31 +247,30 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     if (ndata(snv_pol_fader) != 1) stop("snv_pol_fader has too many data dimensions. Please select one target year only for this disaggregation.")
     # correct available cropland with policy restriction
     for (t in 1:nyears(lr)) {
-      avl_cropland_hr[, t, ] <- avl_cropland_hr[, t, ] * (1 - snv_pol_shr * snv_pol_fader[, getYears(lr)[t], ])
+      avl_cropland_hr_tmp[, t, ] <- avl_cropland_hr_tmp[, t, ] * (1 - snv_pol_shr * snv_pol_fader[, getYears(lr)[t], ])
     }
   } else if (!is.null(snv_pol_fader) & !is.magpie(snv_pol_fader)) {
     if (ncol(snv_pol_fader) != 1) stop("snv_pol_fader has too many columns. Please select one target year only for this disaggregation.")
     # correct available cropland with policy restriction
     for (t in 1:nyears(lr)) {
-      avl_cropland_hr[, t, ] <- avl_cropland_hr[, t, ] * (1 - snv_pol_shr * snv_pol_fader[getYears(lr)[t], ])
+      avl_cropland_hr_tmp[, t, ] <- avl_cropland_hr_tmp[, t, ] * (1 - snv_pol_shr * snv_pol_fader[getYears(lr)[t], ])
     }
   }
 
+  # ----------------------------------------------------------------------------
   # correct for urban land to constrain the calculation of the allocation weight
   # This is due to inconsistency in input dataset where in some regions urban land is already subtracted from avl Cropland
   # In other regions it is not subtracted even when urban centres there exist
   # high resolution
   land_non_urban_hr <- dimSums(x_ini_hr, dim = 3) - x_ini_hr[, , "urban"]
-  getCells(avl_cropland_hr) <- getCells(avl_cropland_hr_tmp) <- getCells(land_non_urban_hr)
+  getCells(avl_cropland_hr_tmp) <- getCells(land_non_urban_hr)
   # where available cropland is larger than total non urban land chose the smaller value [pmin()]
   for (t in 1:nyears(lr)) {
-    avl_cropland_hr_tmp[, t, ] <- pmin(avl_cropland_hr[, t, ], land_non_urban_hr)
+    avl_cropland_hr_tmp[, t, ] <- pmin(avl_cropland_hr_tmp[, t, ], land_non_urban_hr)
   }
-  avl_cropland_hr <- avl_cropland_hr_tmp
 
-  #
-  ##### remove urban cells from potentially available cropland, if not static ###
-  #
+  # -----------------------------------------------------------------------
+  # remove urban cells from potentially available cropland, if not static
   if (is.magpie(urban_land_hr)) {
     # check if urban land output and input correspond at low res level
     urban_input_lr <- toolAggregate(urban_land_hr, map, from = "cell", to = "cluster")
@@ -284,21 +286,41 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     urb_ex <- urban_land_hr - setYears(x_ini_hr[, , "urban"], NULL)
     urb_ex[urb_ex < 0] <- 0 # negatives from rounding
 
-    avl_cropland_hr[, 2:nyears(avl_cropland_hr), ] <- avl_cropland_hr[, 2:nyears(avl_cropland_hr), ] - setNames(urb_ex[, getYears(avl_cropland_hr)[-1], ], NULL)
-    avl_cropland_hr[avl_cropland_hr < 0] <- 0
+    avl_cropland_hr_tmp[, 2:nyears(avl_cropland_hr_tmp), ] <- avl_cropland_hr_tmp[, 2:nyears(avl_cropland_hr_tmp), ] - setNames(urb_ex[, getYears(avl_cropland_hr_tmp)[-1], ], NULL)
+    avl_cropland_hr_tmp[avl_cropland_hr_tmp < 0] <- 0
   }
 
+  # -----------------------------------------------------------------------------
+  # The application of conservation policies in MAgPIE is subject to various
+  # constraints and compensation processes, therefore effective land conservation
+  # can differ from the area provided in the input data. To account for this mismatch,
+  # the adjusted available cropland is rescaled to make sure
+  # that all reported cropland is allocated at the high resolution.
+  tmp_avl_cropland_lr <- toolAggregate(avl_cropland_hr_tmp, map, from = "cell", to = "cluster")
+  if (any(lr[, , "crop"] > tmp_avl_cropland_lr)) {
+    crop_lr_scaling <- lr[, , "crop"] / tmp_avl_cropland_lr
+    crop_lr_scaling[is.na(crop_lr_scaling) | is.infinite(crop_lr_scaling) | crop_lr_scaling < 1] <- 1
+    crop_lr_scaling <- toolAggregate(crop_lr_scaling, map, from = "cluster", to = "cell")
+    avl_cropland_hr_tmp <- crop_lr_scaling * avl_cropland_hr_tmp
+    # make sure that after scaling available cropland is not larger than the unadjusted data
+    for (t in 1:nyears(avl_cropland_hr_tmp)) {
+      overscaled <- avl_cropland_hr_tmp[, t, ] > avl_cropland_hr
+      avl_cropland_hr_tmp[, t, ][overscaled] <- avl_cropland_hr[overscaled]
+    }
+  }
 
+  avl_cropland_hr <- avl_cropland_hr_tmp
 
-  #------------------------------------------------------------------------
+  # ------------------------------------------------------------------------
   # disaggregate low resolution output data to be used in calculations
-  #------------------------------------------------------------------------
+  # ------------------------------------------------------------------------
 
   # total land expansion and reduction at low resolution
   land_reduc_lr_dagg <- toolAggregate(land_reduc_lr, map, from = "cluster", to = "cell")
   land_expan_lr_dagg <- toolAggregate(land_expan_lr, map, from = "cluster", to = "cell")
   # total amount of cropland at low resolution
   land_lr_dagg <- toolAggregate(lr, map, from = "cluster", to = "cell")
+
 
   # ========================================================================
   # allocate cropland at high res (hr)
@@ -370,8 +392,6 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   # allocate non-cropland pools
   # ========================================================================
 
-  # calculate total land area in each grid cell (high resolution)
-  land_tot_hr <- setYears(dimSums(x_ini_hr, dim = 3), NULL)
   # calculate non-cropland vegetation pool after disaggregation
   # sum urban and cropland
   if (is.magpie(urban_land_hr)) {
