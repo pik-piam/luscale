@@ -76,7 +76,7 @@
 #' @param snv_pol_fader Fader for share of set aside policy.
 #' @param year_ini Timestep that is assumed for the initial distributions \code{x_ini_hr} and \code{x_ini_lr}.
 #' @param unit Unit of the output. "Mha", "ha" or "share"
-#' @param land_consv_hr magpie object containing conservation land.
+#' @param land_consv_hr magpie object containing conservation land, e.g. \code{cell.conservation_land_0.5.mz} in the output folder
 #' @return The disaggregated MAgPIE object containing x_ini_hr as first
 #' timestep
 #' @export
@@ -219,20 +219,6 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   avl_cropland_hr_tmp <- new.magpie(getCells(avl_cropland_hr), getYears(lr), marginal_land)
   avl_cropland_hr_tmp[, getYears(lr), ] <- avl_cropland_hr
 
-  # -------------------------------------------------------
-  # adjust available cropland based on conservation land
-  if (!is.null(land_consv_hr)) {
-    land_consv_hr <- dimSums(land_consv_hr[, , "crop", invert = TRUE], dim = 3)
-
-    no_consv_hr <- land_tot_hr - land_consv_hr
-    no_consv_hr[no_consv_hr < 0] <- 0
-    no_consv_hr <- mbind(setYears(no_consv_hr[, 1, ], year_ini), no_consv_hr)
-
-    # Where available cropland is larger than the unprotected area
-    # replace it with the remaining unprotected area
-    avl_cropland_hr_tmp[avl_cropland_hr_tmp > no_consv_hr] <- no_consv_hr[avl_cropland_hr_tmp > no_consv_hr]
-  }
-
   # ------------------------------------------------
   # adjust available cropland based on SNV policy
   if (any(snv_pol_shr != 0) & is.null(snv_pol_fader)) stop("Share of withheld cropland given, but no policy fader for target year provided")
@@ -257,21 +243,14 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     }
   }
 
+  # reference available cropland used as upper bound for rescaling below
+  avl_cropland_base_hr <- avl_cropland_hr_tmp
+
   # ----------------------------------------------------------------------------
   # correct for urban land to constrain the calculation of the allocation weight
-  # This is due to inconsistency in input dataset where in some regions urban land is already subtracted from avl Cropland
-  # In other regions it is not subtracted even when urban centres there exist
-  # high resolution
-  land_non_urban_hr <- dimSums(x_ini_hr, dim = 3) - x_ini_hr[, , "urban"]
-  getCells(avl_cropland_hr_tmp) <- getCells(land_non_urban_hr)
-  # where available cropland is larger than total non urban land chose the smaller value [pmin()]
-  for (t in 1:nyears(lr)) {
-    avl_cropland_hr_tmp[, t, ] <- pmin(avl_cropland_hr_tmp[, t, ], land_non_urban_hr)
-  }
-
-  # -----------------------------------------------------------------------
-  # remove urban cells from potentially available cropland, if not static
+  # in order to make sure that all urban land can be allocated
   if (is.magpie(urban_land_hr)) {
+    ### remove urban cells from potentially available cropland, if not static
     # check if urban land output and input correspond at low res level
     urban_input_lr <- toolAggregate(urban_land_hr, map, from = "cell", to = "cluster")
     testurb <- x[, , "urban"] - urban_input_lr[getItems(x, dim = 1), getYears(x), ]
@@ -281,13 +260,34 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
           greater than 5% of the total range of urban land values in a cluster.
           Consider the urban implementation, maybe something's wrong.")
     }
+    land_non_urban_hr <- setYears(dimSums(x_ini_hr, dim = 3), NULL) - mbind(x_ini_hr[, , "urban"], urban_land_hr[, getYears(x), ])
+    getCells(avl_cropland_hr_tmp) <- getCells(land_non_urban_hr)
+    # where available cropland is larger than (dynamic) total non urban land chose the smaller value [pmin()]
+    for (t in 1:nyears(lr)) {
+      avl_cropland_hr_tmp[, t, ] <- pmin(avl_cropland_hr_tmp[, t, ], land_non_urban_hr[, t, ])
+    }
+  } else {
+    land_non_urban_hr <- dimSums(x_ini_hr, dim = 3) - x_ini_hr[, , "urban"]
+    getCells(avl_cropland_hr_tmp) <- getCells(land_non_urban_hr)
+    # where available cropland is larger than (static) total non urban land chose the smaller value [pmin()]
+    for (t in 1:nyears(lr)) {
+      avl_cropland_hr_tmp[, t, ] <- pmin(avl_cropland_hr_tmp[, t, ], land_non_urban_hr)
+    }
+  }
 
-    # remove urban land expansion from future available cropland
-    urb_ex <- urban_land_hr - setYears(x_ini_hr[, , "urban"], NULL)
-    urb_ex[urb_ex < 0] <- 0 # negatives from rounding
 
-    avl_cropland_hr_tmp[, 2:nyears(avl_cropland_hr_tmp), ] <- avl_cropland_hr_tmp[, 2:nyears(avl_cropland_hr_tmp), ] - setNames(urb_ex[, getYears(avl_cropland_hr_tmp)[-1], ], NULL)
-    avl_cropland_hr_tmp[avl_cropland_hr_tmp < 0] <- 0
+  # -------------------------------------------------------
+  # adjust available cropland based on conservation land
+  if (!is.null(land_consv_hr)) {
+    land_consv_hr <- dimSums(land_consv_hr[, , "crop", invert = TRUE], dim = 3)
+
+    no_consv_hr <- land_tot_hr - land_consv_hr
+    no_consv_hr[no_consv_hr < 0] <- 0
+    no_consv_hr <- mbind(setYears(no_consv_hr[, 1, ], year_ini), no_consv_hr)
+
+    # Where available cropland is larger than the unprotected area
+    # replace it with the remaining unprotected area
+    avl_cropland_hr_tmp[avl_cropland_hr_tmp > no_consv_hr] <- no_consv_hr[avl_cropland_hr_tmp > no_consv_hr]
   }
 
   # -----------------------------------------------------------------------------
@@ -304,8 +304,8 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     avl_cropland_hr_tmp <- crop_lr_scaling * avl_cropland_hr_tmp
     # make sure that after scaling available cropland is not larger than the unadjusted data
     for (t in 1:nyears(avl_cropland_hr_tmp)) {
-      overscaled <- avl_cropland_hr_tmp[, t, ] > avl_cropland_hr
-      avl_cropland_hr_tmp[, t, ][overscaled] <- avl_cropland_hr[overscaled]
+      overscaled <- avl_cropland_hr_tmp[, t, ] > avl_cropland_base_hr[, t, ]
+      avl_cropland_hr_tmp[, t, ][overscaled] <- avl_cropland_base_hr[, t, ][overscaled]
     }
   }
 
