@@ -2,8 +2,8 @@ cff-version: 1.2.0
 message: If you use this software, please cite it using the metadata from this file.
 type: software
 title: 'luscale: PIK Landuse Group Data Scaling Tools'
-version: 2.27.10
-date-released: '2023-08-16'
+version: 2.27.11
+date-released: '2023-10-25'
 abstract: A collection of tools which allow to aggregate and disaggregate data in
   various ways.
 authors:

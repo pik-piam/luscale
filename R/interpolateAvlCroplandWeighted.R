@@ -81,7 +81,7 @@
 #' timestep
 #' @export
 #' @author Patrick von Jeetze, David Chen
-#' @importFrom magclass is.magpie nregions nyears getItems add_columns getNames getYears mbind dimSums setYears getYears new.magpie where
+#' @importFrom magclass is.magpie nregions nyears getItems add_columns getNames mbind dimSums setYears getYears new.magpie where getSets
 #' @importFrom madrat toolAggregate toolGetMapping toolConditionalReplace
 #' @seealso \code{\link{interpolate2}}
 #' \code{\link{toolAggregate}}
@@ -571,6 +571,8 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   } else if (unit == "ha") {
     out <- hr / (unit_scaler / 1e+6)
   }
+
+  if (grepl("region", getSets(out, fulldim = FALSE)[1])) getSets(out, fulldim = FALSE)[1] <- "x.y.iso"
 
   return(out)
 }
