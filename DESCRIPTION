@@ -1,8 +1,8 @@
 Type: Package
 Package: luscale
-Date: 2023-10-25
+Date: 2023-11-06
 Title: PIK Landuse Group Data Scaling Tools
-Version: 2.27.11
+Version: 2.27.12
 Authors@R: c(
     person("Jan Philipp", "Dietrich", , "dietrich@pik-potsdam.de", role = c("aut", "cre")),
     person("Benjamin Leon", "Bodirsky", , "bodirsky@pik-potsdam.de", role = "aut"),

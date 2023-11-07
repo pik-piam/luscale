@@ -572,7 +572,7 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     out <- hr / (unit_scaler / 1e+6)
   }
 
-  if (grepl("region", getSets(out, fulldim = FALSE)[1])) getSets(out, fulldim = FALSE)[1] <- "x.y.iso"
+  if (length(getCells(out)) == "67420") getSets(out, fulldim = FALSE)[1] <- "x.y.iso"
 
   return(out)
 }
