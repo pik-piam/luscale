@@ -57,7 +57,7 @@
 #' 
 
 speed_aggregate <- function(x,rel,fname=NULL,weight=NULL,from=NULL,to=NULL,dim=1, partrel=FALSE) {
-  .Deprecated(new = "toolAggregate", package = "madrat")
+  .Deprecated(new = "madrat::toolAggregate", package = "madrat")
 .toolScale <- function(x,rel,weight,dim=1,comment=NULL) {
   .calcweightmatrix <- function(weight,rel) {
     .tmp <- function(w,rel) {
