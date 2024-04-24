@@ -26,7 +26,8 @@ Disaggregates a cellular MAgPIE output to 0.5 degree based on a spam matrix
 and information about the initial 0.5 degree distribution.
 }
 \details{
-This is a streamlined version of function \code{\link{interpolate}}
+There was a now deleted function called interpolate in this package before,
+hence the name interpolate2.
 
 The function is based on the following assumption: \code{x} is an object in
 low resolution with more than one data dimension and the sum over the data
@@ -34,10 +35,10 @@ dimensions is constant over time. Example: One column cropland, the other
 one (cell size - cropland). \code{x_ini} provides the same type of data
 as \code{x} but in high resolution and for the time step previous the initial
 time step of x (e.g. if \code{x} goes from t=a to t=a+10, \code{x_ini} must
-be provided for t=a-1). The function calculates the amount by which the 
-individual data columns of x change in each timestep. The output is based 
+be provided for t=a-1). The function calculates the amount by which the
+individual data columns of x change in each timestep. The output is based
 on \code{x_ini} and only the differences in later timesteps to ths starting
-point are disaggregated by the spam matrix. This assures that as little 
+point are disaggregated by the spam matrix. This assures that as little
 information as possible is lost from the original dataset \code{x_ini}.
 
 The disaggregation procedure itself works as follows:
