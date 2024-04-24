@@ -27,34 +27,6 @@ ncols (integer) }
 \note{
 Wildcards are supported in \code{file_name}
 }
-\examples{
-
-\dontrun{
-require(spam)
-a <- matrix(c(0,1,1,0,0,1),3,2)
-b <- as.spam(a)
-
-print(b)
-#      [,1] [,2]
-# [1,]    0    0
-# [2,]    1    0
-# [3,]    1    1
-# Class 'spam'
-
-write.spam(b,"test.spam")
-
-c <- read.spam("test.spam")
-
-print(c)
-#      [,1] [,2]
-# [1,]    0    0
-# [2,]    1    0
-# [3,]    1    1
-# Class 'spam'
-file.remove("test.spam")
-
-}
-}
 \seealso{
 \code{\link{write.spam}}
 }

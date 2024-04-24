@@ -33,7 +33,7 @@
 #' entry being one of the 4th dimension slices.
 #' @author Benjamin Bodirsky, Jan Philipp Dietrich, Florian Humpenoeder
 #' @export
-#' @importFrom magclass as.magpie
+#' @importFrom magclass as.magpie ncells getRegions
 #' @seealso \code{\link{colSums}}, \code{\link{magpieSums}}
 #' @examples
 #' 

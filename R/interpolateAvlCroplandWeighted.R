@@ -81,7 +81,7 @@
 #' timestep
 #' @export
 #' @author Patrick von Jeetze, David Chen
-#' @importFrom magclass is.magpie nregions nyears getItems add_columns getNames mbind dimSums setYears getYears new.magpie where getSets
+#' @importFrom magclass is.magpie nregions nyears getItems add_columns getNames mbind dimSums setYears getYears new.magpie where getSets setNames
 #' @importFrom madrat toolAggregate toolGetMapping toolConditionalReplace
 #' @seealso \code{\link{interpolate2}}
 #' \code{\link{toolAggregate}}

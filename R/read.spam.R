@@ -19,33 +19,6 @@
 #' @export
 #' @importFrom utils tail
 #' @seealso \code{\link{write.spam}}
-#' @examples
-#'
-#' \dontrun{
-#' require(spam)
-#' a <- matrix(c(0,1,1,0,0,1),3,2)
-#' b <- as.spam(a)
-#'
-#' print(b)
-#' #      [,1] [,2]
-#' # [1,]    0    0
-#' # [2,]    1    0
-#' # [3,]    1    1
-#' # Class 'spam'
-#'
-#' write.spam(b,"test.spam")
-#'
-#' c <- read.spam("test.spam")
-#'
-#' print(c)
-#' #      [,1] [,2]
-#' # [1,]    0    0
-#' # [2,]    1    0
-#' # [3,]    1    1
-#' # Class 'spam'
-#' file.remove("test.spam")
-#'
-#' }
 #spam_in_out provides functions to read and write spam objects from/into files.
 #Version 1.10 - Jan Philipp Dietrich
 # 1.01: Added ability to save matrices with numeric instead of integer values
