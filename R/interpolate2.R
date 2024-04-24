@@ -1,6 +1,6 @@
 #' Interpolate 2
 #'
-#' Disaggregates a cellular MAgPIE output to 0.5 degree based on a spam matrix
+#' Disaggregates a cellular MAgPIE output to 0.5 degree based on the given mapping
 #' and information about the initial 0.5 degree distribution.
 #'
 #' There was a now deleted function called interpolate in this package before,
@@ -15,7 +15,7 @@
 #' be provided for t=a-1). The function calculates the amount by which the
 #' individual data columns of x change in each timestep. The output is based
 #' on \code{x_ini} and only the differences in later timesteps to ths starting
-#' point are disaggregated by the spam matrix. This assures that as little
+#' point are disaggregated by the given mapping. This assures that as little
 #' information as possible is lost from the original dataset \code{x_ini}.
 #'
 #' The disaggregation procedure itself works as follows:

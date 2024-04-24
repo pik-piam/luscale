@@ -50,6 +50,7 @@
 #' @author Jan Philipp Dietrich, Ulrich Kreidenweis
 #' @export
 #' @importFrom magclass wrap ndata fulldim clean_magpie mselect setCells getCells mbind setComment getNames getNames<- is.magpie read.magpie getComment dimCode fulldim getNames getCells getYears getRegionList getComment<- write.magpie as.magpie 
+#' @importFrom spam rowSums
 #' @examples
 #' 
 #'  \dontrun{low_res <- speed_aggregate(high_res,rel)}
@@ -232,7 +233,7 @@ speed_aggregate <- function(x,rel,fname=NULL,weight=NULL,from=NULL,to=NULL,dim=1
     if(length(grep("\\.csv$",rel))>0) {
       rel <- getAggregationMatrix(rel,from=from,to=to) 
     } else {
-      rel <- read.spam(rel)
+      stop("cannot read spam files with this luscale version, please use luscale <= 2.27.12")
     }
   }
   if(!is.numeric(rel)) {
