@@ -59,7 +59,7 @@ superAggregate(population_magpie,aggregation_function,level="glo",weight=populat
 
 }
 \seealso{
-\code{\link{colSums}}, \code{\link{magpieSums}}
+\code{\link{colSums}}
 }
 \author{
 Benjamin Bodirsky, Jan Philipp Dietrich, Florian Humpenoeder

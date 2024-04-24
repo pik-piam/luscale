@@ -27,9 +27,6 @@ ncols (integer) }
 \note{
 Wildcards are supported in \code{file_name}
 }
-\seealso{
-\code{\link{write.spam}}
-}
 \author{
 Jan Philipp Dietrich
 }

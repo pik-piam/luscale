@@ -50,7 +50,6 @@
 #' @author Jan Philipp Dietrich, Ulrich Kreidenweis
 #' @export
 #' @importFrom magclass wrap ndata fulldim clean_magpie mselect setCells getCells mbind setComment getNames getNames<- is.magpie read.magpie getComment dimCode fulldim getNames getCells getYears getRegionList getComment<- write.magpie as.magpie 
-#' @seealso \code{\link{create_spam}}
 #' @examples
 #' 
 #'  \dontrun{low_res <- speed_aggregate(high_res,rel)}

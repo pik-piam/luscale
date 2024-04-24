@@ -34,7 +34,8 @@
 #' @author Benjamin Bodirsky, Jan Philipp Dietrich, Florian Humpenoeder
 #' @export
 #' @importFrom magclass as.magpie ncells getRegions
-#' @seealso \code{\link{colSums}}, \code{\link{magpieSums}}
+#' @importFrom spam rowSums
+#' @seealso \code{\link{colSums}}
 #' @examples
 #' 
 #' data(population_magpie)

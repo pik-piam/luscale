@@ -70,9 +70,6 @@ weighting column to NA.
  \dontrun{low_res <- speed_aggregate(high_res,rel)}
 
 }
-\seealso{
-\code{\link{create_spam}}
-}
 \author{
 Jan Philipp Dietrich, Ulrich Kreidenweis
 }

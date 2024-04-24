@@ -18,7 +18,6 @@
 #' @author Jan Philipp Dietrich
 #' @export
 #' @importFrom utils tail
-#' @seealso \code{\link{write.spam}}
 #spam_in_out provides functions to read and write spam objects from/into files.
 #Version 1.10 - Jan Philipp Dietrich
 # 1.01: Added ability to save matrices with numeric instead of integer values
