@@ -233,7 +233,7 @@ speed_aggregate <- function(x,rel,fname=NULL,weight=NULL,from=NULL,to=NULL,dim=1
     if(length(grep("\\.csv$",rel))>0) {
       rel <- getAggregationMatrix(rel,from=from,to=to) 
     } else {
-      stop("cannot read spam files with this luscale version, please use luscale <= 2.27.12")
+      stop("cannot read spam files with this luscale version, please use luscale < 3.0.0")
     }
   }
   if(!is.numeric(rel)) {
