@@ -1,8 +1,8 @@
 Type: Package
 Package: luscale
-Date: 2023-11-06
+Date: 2024-04-24
 Title: PIK Landuse Group Data Scaling Tools
-Version: 2.27.12
+Version: 3.0.0
 Authors@R: c(
     person("Jan Philipp", "Dietrich", , "dietrich@pik-potsdam.de", role = c("aut", "cre")),
     person("Benjamin Leon", "Bodirsky", , "bodirsky@pik-potsdam.de", role = "aut"),
@@ -23,16 +23,11 @@ Depends:
     methods,
     R (>= 2.10.0)
 Imports:
-    lpSolve,
     madrat,
     spam,
-    stats,
     utils
 Suggests:
-    covr,
-    digest,
-    raster,
-    sp
+    covr
 Encoding: UTF-8
 LazyData: no
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1

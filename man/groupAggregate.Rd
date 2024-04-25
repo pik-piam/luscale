@@ -12,8 +12,7 @@ dim=3, query=NULL, from=NULL, to=NULL, ...)
 
 \item{vectorfunction}{Aggregation Type. Can be any vector function, and will
 be applied over the sub-vectors of "dim". E.g. the function is applied to
-the vector of temperate cereals in each region and each timestep. See
-weighted_mean.groupAggregate for a function using a weight.}
+the vector of temperate cereals in each region and each timestep.}
 
 \item{dim}{The dimension over which is aggregated. Can be 1,3 or higher.
 This dimension will be replaced by the larger categories specified in the
@@ -130,8 +129,7 @@ c<-groupAggregate(a,dim=1)
 }
 }
 \seealso{
-\code{\link{weighted_mean.groupAggregate}}, \code{\link{colSums}},
-\code{\link{magpieSums}}, \code{\link{superAggregate}}
+\code{\link{colSums}}, \code{\link{superAggregate}}
 }
 \author{
 Benjamin Bodirsky

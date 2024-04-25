@@ -9,8 +9,7 @@
 #' @param data A MAgPIE object or array
 #' @param vectorfunction Aggregation Type. Can be any vector function, and will
 #' be applied over the sub-vectors of "dim". E.g. the function is applied to
-#' the vector of temperate cereals in each region and each timestep. See
-#' weighted_mean.groupAggregate for a function using a weight.
+#' the vector of temperate cereals in each region and each timestep.
 #' @param dim The dimension over which is aggregated. Can be 1,3 or higher.
 #' This dimension will be replaced by the larger categories specified in the
 #' query.
@@ -29,8 +28,7 @@
 #' @export
 #' @importFrom utils read.csv
 #' @importFrom magclass is.magpie unwrap as.magpie 
-#' @seealso \code{\link{weighted_mean.groupAggregate}}, \code{\link{colSums}},
-#' \code{\link{magpieSums}}, \code{\link{superAggregate}}
+#' @seealso \code{\link{colSums}}, \code{\link{superAggregate}}
 #' @examples
 #' \dontrun{
 #' a <- new.magpie(cells_and_regions = c("ZAF.1","ZAR.2","VEN.3"),
