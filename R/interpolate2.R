@@ -111,7 +111,6 @@ interpolate2 <- function(x, x_ini, map, x_ini_lr = NULL) { # nolint: object_name
   # calculate land pools in high res (hr)
   hr <- new.magpie(getCells(xIni), c(getYears(xIni), getYears(reductHr)), getNames(xIni))
   hr[, 1, ] <- xIni
-  getCells(reductHr) <- getCells(extentHr) <- getCells(xIni)
 
   for (y in 1:nyears(reductHr)) {
     hr[, y + 1, ] <- (1 - reductHr[, y, ]) * setYears(hr[, y, ], NULL) +
