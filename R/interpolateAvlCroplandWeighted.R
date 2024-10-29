@@ -77,6 +77,7 @@
 #' @param year_ini Timestep that is assumed for the initial distributions \code{x_ini_hr} and \code{x_ini_lr}.
 #' @param unit Unit of the output. "Mha", "ha" or "share"
 #' @param land_consv_hr magpie object containing conservation land, e.g. \code{cell.conservation_land_0.5.mz} in the output folder
+#' @param peat_hr Disaggregated peatland with MAgPIE peatland pools
 #' @return The disaggregated MAgPIE object containing x_ini_hr as first
 #' timestep
 #' @export

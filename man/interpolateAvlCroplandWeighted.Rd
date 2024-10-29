@@ -42,6 +42,8 @@ interpolateAvlCroplandWeighted(
 
 \item{land_consv_hr}{magpie object containing conservation land, e.g. \code{cell.conservation_land_0.5.mz} in the output folder}
 
+\item{peat_hr}{Disaggregated peatland with MAgPIE peatland pools}
+
 \item{snv_pol_shr}{Share of available cropland that is witheld for other land cover types. Can be supplied as a
 single value or as a magpie object containing different values in each iso country.}
 
