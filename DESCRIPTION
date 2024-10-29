@@ -30,4 +30,4 @@ Suggests:
     covr
 Encoding: UTF-8
 LazyData: no
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2

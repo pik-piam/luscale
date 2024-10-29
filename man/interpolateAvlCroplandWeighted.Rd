@@ -13,6 +13,7 @@ interpolateAvlCroplandWeighted(
   urban_land_hr = "static",
   marginal_land = "all_marginal",
   land_consv_hr = NULL,
+  peat_hr = NULL,
   snv_pol_shr = 0,
   snv_pol_fader = NULL,
   year_ini = "y1985",
