@@ -537,7 +537,11 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   #------------------------------------------------------------------------
 
   # Calculate share of secondary conservation in remaining secondary land
-  secd_consv_veg <- c("past", "secdforest", "other")
+  if("rangeland" %in% getNames(all_consv_hr)) {
+    secd_consv_veg <- c("rangeland", "secdforest", "other")
+  } else {
+    secd_consv_veg <- c("past", "secdforest", "other")
+  }
   tot_consv_hr <- dimSums(all_consv_hr[, , secd_consv_veg], dim = 3)
   tot_consv_shr_hr <- tot_consv_hr / land_tot_secd_veg_hr
   tot_consv_shr_hr[is.na(tot_consv_shr_hr)] <- 0
