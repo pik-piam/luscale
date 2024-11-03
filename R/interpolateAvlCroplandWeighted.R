@@ -300,7 +300,7 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
 
   if (any(c(!is.null(land_consv_hr), !is.null(peat_consv_hr)))) {
     if (!is.null(land_consv_hr)) {
-      all_consv_hr[, getYears(land_consv_hr), ] <- land_consv_hr
+      all_consv_hr[, getYears(land_consv_hr), getNames(land_consv_hr)] <- land_consv_hr
     }
 
     if (!is.null(peat_consv_hr)) {
