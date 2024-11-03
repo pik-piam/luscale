@@ -186,6 +186,8 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
       sets = names(dimnames(peat_hr))
     )
     peat_consv_hr[, getYears(peat_hr), ] <- dimSums(peat_hr[, , c("intact", "rewetted")], dim = 3) * unit_scaler
+  } else if (is.null(peat_hr)) {
+    peat_consv_hr <- NULL
   }
 
   if (is.magpie(urban_land_hr)) {
