@@ -164,7 +164,7 @@ c <- interpolateAvlCroplandWeighted(
 }
 \seealso{
 \code{\link{interpolate2}}
-\code{\link{toolAggregate}}
+\code{\link[madrat]{toolAggregate}}
 }
 \author{
 Patrick von Jeetze, David Chen
