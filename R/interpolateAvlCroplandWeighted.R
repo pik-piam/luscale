@@ -64,7 +64,7 @@
 #' @param x_ini_hr The initial high resolution distribution of x (land-use initialisation) before model optimization.
 #' @param avl_cropland_hr The area of available cropland at the high resolution.
 #' @param urban_land_hr Either a magpie object of the cellular urban input data, or "static" string
-#' @param map A relation map between low and high resolution
+#' @param map A relation map between low and high resolution, path or data.frame
 #' @param marginal_land Depending on the cropland suitability data, standard options are
 #' \itemize{
 #' \item \code{"all_marginal"}: Cropland can be allocated to marginal land
@@ -137,7 +137,7 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   if (nregions(x) != nregions(x_ini_lr)) stop("x and x_ini_lr have to be of the same spatial aggregation")
   if (nyears(x_ini_lr) > 1 || nyears(x_ini_hr) > 1) stop("Initialization data must only have one timestep")
   if (!all(getNames(x) == getNames(x_ini_lr)) || !all(getNames(x) == getNames(x_ini_hr))) stop("dimnames[[3]] of x, x_ini_lr and x_ini_hr have to be the same")
-  if (!file.exists(map)) stop("relation map file ", map, " not found")
+  if (is.character(map) && !file.exists(map)) stop("relation map file ", map, " not found")
 
   # ========================================================================
   # prepare data for land allocation
@@ -212,7 +212,7 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   # read cluster map
   # ---------------------------------
 
-  if (length(map) == 1) {
+  if (is.character(map) && length(map) == 1) {
     map <- toolGetMapping(map, where = "local")
   }
 
