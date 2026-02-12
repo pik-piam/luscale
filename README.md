@@ -1,6 +1,6 @@
 # PIK Landuse Group Data Scaling Tools
 
-R package **luscale**, version **3.1.4**
+R package **luscale**, version **3.1.5**
 
 [![CRAN status](https://www.r-pkg.org/badges/version/luscale)](https://cran.r-project.org/package=luscale) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1158584.svg)](https://doi.org/10.5281/zenodo.1158584) [![R build status](https://github.com/pik-piam/luscale/workflows/check/badge.svg)](https://github.com/pik-piam/luscale/actions) [![codecov](https://codecov.io/gh/pik-piam/luscale/branch/master/graph/badge.svg)](https://app.codecov.io/gh/pik-piam/luscale) [![r-universe](https://pik-piam.r-universe.dev/badges/luscale)](https://pik-piam.r-universe.dev/builds)
 
@@ -39,7 +39,7 @@ In case of questions / problems please contact Jan Philipp Dietrich <dietrich@pi
 
 To cite package **luscale** in publications use:
 
-Dietrich J, Bodirsky B, Bonsch M, Kreidenweiss U, Hennig R, Humpenoeder F (2025). "luscale: PIK Landuse Group Data Scaling Tools." doi:10.5281/zenodo.1158584 <https://doi.org/10.5281/zenodo.1158584>, Version: 3.1.4, <https://github.com/pik-piam/luscale>.
+Dietrich J, Bodirsky B, Bonsch M, Kreidenweiss U, Hennig R, Humpenoeder F (2026). "luscale: PIK Landuse Group Data Scaling Tools." doi:10.5281/zenodo.1158584 <https://doi.org/10.5281/zenodo.1158584>, Version: 3.1.5, <https://github.com/pik-piam/luscale>.
 
 A BibTeX entry for LaTeX users is
 
@@ -48,9 +48,9 @@ A BibTeX entry for LaTeX users is
   title = {luscale: PIK Landuse Group Data Scaling Tools},
   author = {Jan Philipp Dietrich and Benjamin Leon Bodirsky and Markus Bonsch and Ulrich Kreidenweiss and Roman Julius Hennig and Florian Humpenoeder},
   doi = {10.5281/zenodo.1158584},
-  date = {2025-05-14},
-  year = {2025},
+  date = {2026-02-12},
+  year = {2026},
   url = {https://github.com/pik-piam/luscale},
-  note = {Version: 3.1.4},
+  note = {Version: 3.1.5},
 }
 ```
