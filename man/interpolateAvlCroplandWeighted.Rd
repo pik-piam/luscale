@@ -29,7 +29,7 @@ interpolateAvlCroplandWeighted(
 
 \item{avl_cropland_hr}{The area of available cropland at the high resolution.}
 
-\item{map}{A relation map between low and high resolution}
+\item{map}{A relation map between low and high resolution, path or data.frame}
 
 \item{urban_land_hr}{Either a magpie object of the cellular urban input data, or "static" string}
 
@@ -164,7 +164,7 @@ c <- interpolateAvlCroplandWeighted(
 }
 \seealso{
 \code{\link{interpolate2}}
-\code{\link{toolAggregate}}
+\code{\link[madrat]{toolAggregate}}
 }
 \author{
 Patrick von Jeetze, David Chen
