@@ -380,7 +380,7 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
 
     # calculate the allocation weight for the residual land reduction:
     # divide temporay cropland at high resolution by sum of the temporary at low resolution
-    crop_reduc_weight <- cropland_hr[, t, "crop"] / (tmp_cropland_lr_dagg)
+    crop_reduc_weight <- round(cropland_hr[, t, "crop"], 6) / round(tmp_cropland_lr_dagg, 6)
     crop_reduc_weight[is.na(crop_reduc_weight) | is.infinite(crop_reduc_weight)] <- 0
 
     # allocate the residual cropland reduction
@@ -401,7 +401,7 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
 
     # calculate the expansion weight for the residual expansion
     # divide the available land by the total area of the residual expansion at low resolution
-    crop_expan_weight <- cropland_remain_hr / tmp_remain_lr_dagg
+    crop_expan_weight <- round(cropland_remain_hr, 6) / round(tmp_remain_lr_dagg, 6)
     crop_expan_weight[is.na(crop_expan_weight) | is.infinite(crop_expan_weight)] <- 0
 
     residual_expan_hr <- residual_expan_lr * crop_expan_weight
@@ -478,6 +478,8 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     land_nocrop_hr[, t, "primforest"] <- pmax(land_nocrop_hr[, t, "primforest"], all_consv_hr[, t, "primforest"])
     # double check whether it's not larger than in previous time step
     land_nocrop_hr[, t, "primforest"] <- pmin(land_nocrop_hr[, t, "primforest"], land_nocrop_hr[, t - 1, "primforest"])
+    # double check whether it's not larger than remaining land
+    land_nocrop_hr[, t, "primforest"] <- pmin(land_nocrop_hr[, t, "primforest"], land_tot_nocrop_veg_hr[, t, ])
 
     # sum temporary primary forest pool at low resolution to compare it with the pool in x
     tmp_land_primforest_lr <- toolAggregate(land_nocrop_hr[, t, "primforest"], map, from = "cell", to = "cluster")
@@ -491,7 +493,7 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
 
     # calculate the allocation weight for the residual land reduction:
     # divide temporay primary forest pool at high resolution by sum of the temporary pool at low resolution
-    primf_reduc_weight <- land_nocrop_hr[, t, "primforest"] / (tmp_land_primforest_lr_dagg)
+    primf_reduc_weight <- round(land_nocrop_hr[, t, "primforest"], 6) / round(tmp_land_primforest_lr_dagg, 6)
     primf_reduc_weight[is.na(primf_reduc_weight) | is.infinite(primf_reduc_weight)] <- 0
 
     # allocate the residual primary forest reduction
@@ -508,15 +510,14 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     primf_avail_hr <- land_nocrop_hr[, t - 1, "primforest"] - land_nocrop_hr[, t, "primforest"]
 
     # Check if there is still  land available in this cell for the amount of forest required
-    land_left_hr <- setNames(land_tot_hr - setYears(dimSums(land_nocrop_hr[, t, c("urban", "primforest")], dim = 3), NULL) -
-      setNames(setYears(cropland_hr[, t, ], NULL), NULL), NULL)
+    nocrop_land_left_hr <- setNames(land_tot_nocrop_veg_hr[, t, ] - setYears(land_nocrop_hr[, t, "primforest"], NULL), NULL)
     # weight by either gap between current tmp and previous time step, or by amount of land remaining
-    primf_avail_hr_constr <- pmin(primf_avail_hr, land_left_hr)
+    primf_avail_hr_constr <- pmin(primf_avail_hr, nocrop_land_left_hr)
     primf_avail_hr_constr[primf_avail_hr_constr < 0] <- 0
 
     # calculate the allocation weight for the residual primary forest land
     # divide the available land by the total area of the residual allocation at low resolution
-    primf_alloc_weight <- primf_avail_hr_constr / (primf_residual_alloc_lr)
+    primf_alloc_weight <- round(primf_avail_hr_constr, 6) / round(primf_residual_alloc_lr, 6)
     primf_alloc_weight[is.na(primf_alloc_weight) | is.infinite(primf_alloc_weight)] <- 0
 
     primf_residual_alloc_hr <- primf_residual_alloc_lr * primf_alloc_weight
@@ -533,48 +534,52 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   getNames(land_tot_secd_veg_hr) <- NULL
 
   #------------------------------------------------------------------------
-  # Pre-allocate secondary conservation land
+  # Rescale secondary conservation land to avoid over-allocation
   #------------------------------------------------------------------------
 
   # Calculate share of secondary conservation in remaining secondary land
-  if("rangeland" %in% getNames(all_consv_hr)) {
+  if ("rangeland" %in% getNames(all_consv_hr)) {
     secd_consv_veg <- c("rangeland", "secdforest", "other")
   } else {
     secd_consv_veg <- c("past", "secdforest", "other")
   }
+
+  # Rescale secondary unmanaged land based on previously
+  # allocated primary forest to avoid conservation over-allocation
+  unmg_consv_land_hr <- dimSums(all_consv_hr[, , c("primforest", "secdforest", "other")], dim = 3)
+  residual_consv_hr <-  unmg_consv_land_hr - setNames(land_nocrop_hr[, , "primforest"], NULL)
+  residual_consv_hr[residual_consv_hr < 0] <- 0
+  consv_residual_scaling <- residual_consv_hr / dimSums(all_consv_hr[, , c("secdforest", "other")], dim = 3)
+  consv_residual_scaling[is.na(consv_residual_scaling) | is.infinite(consv_residual_scaling)] <- 0
+  consv_residual_scaling[consv_residual_scaling > 1] <- 1
+  all_consv_hr[, , c("secdforest", "other")] <- all_consv_hr[, , c("secdforest", "other")] * consv_residual_scaling
+
+  # Scale land conservation to remaining non-cropland area
   tot_consv_hr <- dimSums(all_consv_hr[, , secd_consv_veg], dim = 3)
-  tot_consv_shr_hr <- tot_consv_hr / land_tot_secd_veg_hr
-  tot_consv_shr_hr[is.na(tot_consv_shr_hr)] <- 0
-  tot_consv_shr_hr[tot_consv_shr_hr > 1] <- 1
+  consv_land_scaling <- land_tot_secd_veg_hr / tot_consv_hr
+  consv_land_scaling[is.na(consv_land_scaling) | is.infinite(consv_land_scaling)] <- 0
+  consv_land_scaling[consv_land_scaling > 1] <- 1
+  secd_consv_hr <- all_consv_hr[, , secd_consv_veg] * consv_land_scaling
 
-  # Calculate the conservation share of each secondary land pool
-  secd_consv_shr <- all_consv_hr[, , secd_consv_veg] / tot_consv_hr
-  secd_consv_shr[is.na(secd_consv_shr)] <- 0
-
-  # Pre-allocate secondardy conservation land
-  secd_consv_hr <- land_tot_secd_veg_hr * tot_consv_shr_hr * secd_consv_shr
-
-  # Substract total conservation land from remaining secondary land
-  land_tot_secd_veg_hr <- land_tot_secd_veg_hr - tot_consv_hr
-  land_tot_secd_veg_hr[land_tot_secd_veg_hr < 0] <- 0
   #------------------------------------------------------------------------
   # allocate remaining secondary vegetation land pools
   #------------------------------------------------------------------------
 
   for (t in 2:nyears(land_nocrop_hr)) {
     # calculate share of non-cropland vegetation pools in previous time step
-    shr_prev_nocrop_veg_hr <- land_nocrop_hr[, t - 1, secd_veg] / (land_tot_secd_veg_hr[, t - 1, ])
+    shr_prev_nocrop_veg_hr <- land_nocrop_hr[, t - 1, secd_veg] / dimSums(land_nocrop_hr[, t - 1, secd_veg], dim = 3)
     shr_prev_nocrop_veg_hr[is.na(shr_prev_nocrop_veg_hr) | is.infinite(shr_prev_nocrop_veg_hr)] <- 0
     # account for small mismatches during division
     shr_prev_nocrop_veg_hr[shr_prev_nocrop_veg_hr > 1] <- 1
-    # multiply shares of non-cropland pools in previous time step with available land in current time step
-    land_nocrop_hr[, t, secd_veg] <- shr_prev_nocrop_veg_hr * land_tot_secd_veg_hr[, t, ]
+    # multiply shares of non-cropland pools in previous time step with non-conservation land in current time step
+    land_noconsv_hr <- (land_tot_secd_veg_hr[, t, ] - dimSums(secd_consv_hr[, t, ], dim = 3))
+    land_noconsv_hr[land_noconsv_hr < 0] <- 0
+    land_nocrop_hr[, t, secd_veg] <- shr_prev_nocrop_veg_hr * land_noconsv_hr
 
     # sum temporary non-cropland land pool at low resolution to compare them with the land pools in x
-    # account for conservation land during comparison
-    all_nocrop_hr <- land_nocrop_hr[, t, secd_veg]
-    all_nocrop_hr[, , secd_consv_veg] <- land_nocrop_hr[, t, secd_consv_veg] + secd_consv_hr[, t, secd_consv_veg]
-    tmp_land_nocrop_lr <- toolAggregate(all_nocrop_hr, map, from = "cell", to = "cluster")
+    # also account for conservation land during comparison
+    land_nocrop_hr[, t, secd_consv_veg] <- land_nocrop_hr[, t, secd_consv_veg] + secd_consv_hr[, t, secd_consv_veg]
+    tmp_land_nocrop_lr <- toolAggregate(land_nocrop_hr[, t, secd_veg], map, from = "cell", to = "cluster")
     tmp_land_nocrop_lr_dagg <- toolAggregate(tmp_land_nocrop_lr, map, from = "cluster", to = "cell")
 
     # calculate the residual difference that still needs to be allocated
@@ -586,7 +591,7 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
 
     # calculate the allocation weight for the residual land reduction:
     # divide temporay non-croplad pools at high resolution by sum of the temporary at low resolution
-    nocrop_reduc_weight <- land_nocrop_hr[, t, secd_veg] / (tmp_land_nocrop_lr_dagg)
+    nocrop_reduc_weight <- round(land_nocrop_hr[, t, secd_veg], 6) / round(tmp_land_nocrop_lr_dagg, 6)
     nocrop_reduc_weight[is.na(nocrop_reduc_weight) | is.infinite(nocrop_reduc_weight)] <- 0
 
     # allocate the residual non-cropland pool reduction
@@ -599,20 +604,18 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     residual_expan_lr[residual_expan_lr < 0] <- 0
 
     # calculate the remaining available land at high resolution
-    nocrop_avail_hr <- (land_tot_secd_veg_hr[, t, ] - dimSums(land_nocrop_hr[, t, secd_veg], dim = 3)) * (residual_expan_lr / dimSums(residual_expan_lr, dim = 3))
+    nocrop_land_left_hr <- (land_tot_secd_veg_hr[, t, ] - dimSums(land_nocrop_hr[, t, secd_veg], dim = 3))
+    nocrop_land_left_hr[nocrop_land_left_hr < 0] <- 0
+    nocrop_avail_hr <- nocrop_land_left_hr * (residual_expan_lr / dimSums(residual_expan_lr, dim = 3))
 
     # calculate the expansion weight for the residual expansion
     # divide the available land by the total area of the residual expansion at low resolution
-    nocrop_expan_weight <- nocrop_avail_hr / (residual_expan_lr)
+    nocrop_expan_weight <- round(nocrop_avail_hr, 6) / round(residual_expan_lr, 6)
     nocrop_expan_weight[is.na(nocrop_expan_weight) | is.infinite(nocrop_expan_weight)] <- 0
 
     # allocate the residual non-cropland pool expansion
     land_nocrop_hr[, t, secd_veg] <- land_nocrop_hr[, t, secd_veg] + residual_expan_lr * nocrop_expan_weight
   }
-
-
-  # add conservation land to overall secondary land pools
-  land_nocrop_hr[, , secd_consv_veg] <- land_nocrop_hr[, , secd_consv_veg] + secd_consv_hr[, , secd_consv_veg]
 
   # ========================================================================
   # return output
