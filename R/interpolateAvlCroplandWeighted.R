@@ -133,10 +133,18 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
                                            marginal_land = "all_marginal", land_consv_hr = NULL, peat_hr = NULL,
                                            snv_pol_shr = 0, snv_pol_fader = NULL, year_ini = "y1985", unit = "Mha") {
   # test whether data can be handled by function
-  if (!is.magpie(x) || !is.magpie(x_ini_lr) || !is.magpie(x_ini_hr) || (!is.magpie(urban_land_hr) && urban_land_hr != "static")) stop("x, x_ini_lr and x_ini_hr, urban_land_hr have to be magpie objects")
+  if (!is.magpie(x) ||
+    !is.magpie(x_ini_lr) ||
+    !is.magpie(x_ini_hr) ||
+    (!is.magpie(urban_land_hr) && urban_land_hr != "static")) {
+    stop("x, x_ini_lr and x_ini_hr, urban_land_hr have to be magpie objects")
+  }
   if (nregions(x) != nregions(x_ini_lr)) stop("x and x_ini_lr have to be of the same spatial aggregation")
   if (nyears(x_ini_lr) > 1 || nyears(x_ini_hr) > 1) stop("Initialization data must only have one timestep")
-  if (!all(getNames(x) == getNames(x_ini_lr)) || !all(getNames(x) == getNames(x_ini_hr))) stop("dimnames[[3]] of x, x_ini_lr and x_ini_hr have to be the same")
+  if (!all(getNames(x) == getNames(x_ini_lr)) ||
+    !all(getNames(x) == getNames(x_ini_hr))) {
+    stop("dimnames[[3]] of x, x_ini_lr and x_ini_hr have to be the same")
+  }
   if (!file.exists(map)) stop("relation map file ", map, " not found")
 
   # ========================================================================
@@ -151,8 +159,11 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   lr <- mbind(x_ini_lr, x)
 
   # Test if the total sum is constant
-  test <- dimSums(lr, dim = c(1, 3))[, 2:nyears(lr), ] - setYears(dimSums(lr, dim = c(1, 3))[, 1:nyears(lr) - 1, ], getYears(lr)[2:nyears(lr)])
-  if (max(test) > 0.1 || min(test) < -0.1) warning("Sum over all land pools in MAgPIE output is not constant over time. See help for details")
+  test <- dimSums(lr, dim = c(1, 3))[, 2:nyears(lr), ] -
+    setYears(dimSums(lr, dim = c(1, 3))[, 1:nyears(lr) - 1, ], getYears(lr)[2:nyears(lr)])
+  if (max(test) > 0.1 || min(test) < -0.1) {
+    warning("Sum over all land pools in MAgPIE output is not constant over time. See help for details")
+  }
 
   #------------------------------------------------------------------------
   # transform units for higher accuracy during calculations
@@ -234,7 +245,11 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
 
   # ------------------------------------------------
   # adjust available cropland based on SNV policy
-  if (any(snv_pol_shr != 0) & is.null(snv_pol_fader)) stop("Share of withheld cropland given, but no policy fader for target year provided")
+  if (any(snv_pol_shr != 0) & is.null(snv_pol_fader)) {
+    stop(
+      "Share of withheld cropland given, but no policy fader for target year provided"
+    )
+  }
 
   if (length(snv_pol_shr == 1)) {
     snv_pol_shr <- new.magpie(map[, "cell"], fill = snv_pol_shr)
@@ -243,13 +258,21 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   }
 
   if (!is.null(snv_pol_fader) & is.magpie(snv_pol_fader)) {
-    if (ndata(snv_pol_fader) != 1) stop("snv_pol_fader has too many data dimensions. Please select one target year only for this disaggregation.")
+    if (ndata(snv_pol_fader) != 1) {
+      stop(
+        "snv_pol_fader has too many data dimensions. Please select one target year only for this disaggregation."
+      )
+    }
     # correct available cropland with policy restriction
     for (t in 1:nyears(lr)) {
       avl_cropland_hr_tmp[, t, ] <- avl_cropland_hr_tmp[, t, ] * (1 - snv_pol_shr * snv_pol_fader[, getYears(lr)[t], ])
     }
   } else if (!is.null(snv_pol_fader) & !is.magpie(snv_pol_fader)) {
-    if (ncol(snv_pol_fader) != 1) stop("snv_pol_fader has too many columns. Please select one target year only for this disaggregation.")
+    if (ncol(snv_pol_fader) != 1) {
+      stop(
+        "snv_pol_fader has too many columns. Please select one target year only for this disaggregation."
+      )
+    }
     # correct available cropland with policy restriction
     for (t in 1:nyears(lr)) {
       avl_cropland_hr_tmp[, t, ] <- avl_cropland_hr_tmp[, t, ] * (1 - snv_pol_shr * snv_pol_fader[getYears(lr)[t], ])
@@ -273,7 +296,8 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
           greater than 5% of the total range of urban land values in a cluster.
           Consider the urban implementation, maybe something's wrong.")
     }
-    land_non_urban_hr <- setYears(dimSums(x_ini_hr, dim = 3), NULL) - mbind(x_ini_hr[, , "urban"], urban_land_hr[, getYears(x), ])
+    land_non_urban_hr <- setYears(dimSums(x_ini_hr, dim = 3), NULL) -
+      mbind(x_ini_hr[, , "urban"], urban_land_hr[, getYears(x), ])
     getCells(avl_cropland_hr_tmp) <- getCells(land_non_urban_hr)
     # where available cropland is larger than (dynamic) total non urban land chose the smaller value [pmin()]
     for (t in 1:nyears(lr)) {
@@ -304,7 +328,8 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     }
 
     if (!is.null(peat_consv_hr)) {
-      all_consv_hr[, getYears(peat_consv_hr), "other"] <- all_consv_hr[, getYears(peat_consv_hr), "other"] + peat_consv_hr
+      all_consv_hr[, getYears(peat_consv_hr), "other"] <-
+        all_consv_hr[, getYears(peat_consv_hr), "other"] + peat_consv_hr
     }
 
     all_consv_hr[, , "crop"] <- 0
@@ -426,10 +451,16 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
       urban_land_hr <- urban_land_hr[, sort(getYears(urban_land_hr, as.integer = TRUE)), ]
       urban_land_hr[, year_ini, ] <- urban_land_hr[, 2, ]
 
-      land_tot_nocrop_veg_hr <- setNames(setYears(land_tot_hr - urban_land_hr[, getYears(cropland_hr), ] - cropland_hr, getYears(cropland_hr)), NULL)
+      land_tot_nocrop_veg_hr <- setNames(
+        setYears(land_tot_hr - urban_land_hr[, getYears(cropland_hr), ] - cropland_hr, getYears(cropland_hr)),
+        NULL
+      )
     }
   } else {
-    land_tot_nocrop_veg_hr <- setNames(setYears(land_tot_hr - x_ini_hr[, , "urban"] - cropland_hr, getYears(cropland_hr)), NULL)
+    land_tot_nocrop_veg_hr <- setNames(
+      setYears(land_tot_hr - x_ini_hr[, , "urban"] - cropland_hr, getYears(cropland_hr)),
+      NULL
+    )
   }
 
   land_tot_nocrop_veg_hr[land_tot_nocrop_veg_hr < 0] <- 0
@@ -458,19 +489,26 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
 
   for (t in 2:nyears(land_nocrop_hr)) {
     # check where there was cropland and urban expansion
-    where_expan <- magclass::where(cropland_hr[, t, ] > cropland_hr[, t - 1, ] | land_nocrop_hr[, t, "urban"] > land_nocrop_hr[, t - 1, "urban"])[["true"]][["regions"]]
+    where_expan <- magclass::where(
+      cropland_hr[, t, ] > cropland_hr[, t - 1, ] |
+        land_nocrop_hr[, t, "urban"] > land_nocrop_hr[, t - 1, "urban"]
+    )[["true"]][["regions"]]
     # calculate share of primary forest in previous time step
     shr_prev_primforest_hr <- land_nocrop_hr[, t - 1, "primforest"] / (land_tot_nocrop_veg_hr[, t - 1, ])
     shr_prev_primforest_hr[is.na(shr_prev_primforest_hr) | is.infinite(shr_prev_primforest_hr)] <- 0
     # multiply share of primary forest in previous time step with available land in current time step
     # to allocate primary forest in cells with cropland expansion
-    land_nocrop_hr[where_expan, t, "primforest"] <- shr_prev_primforest_hr[where_expan, , ] * land_tot_nocrop_veg_hr[where_expan, t, ]
+    land_nocrop_hr[where_expan, t, "primforest"] <-
+      shr_prev_primforest_hr[where_expan, , ] * land_tot_nocrop_veg_hr[where_expan, t, ]
     # account for small mismatches during multiplication
     inacc_hr <- land_nocrop_hr[where_expan, t, "primforest"] > land_tot_nocrop_veg_hr[where_expan, t, ]
     land_nocrop_hr[where_expan, t, "primforest"][inacc_hr] <- land_tot_nocrop_veg_hr[where_expan, t, ][inacc_hr]
 
     # check in which cells there was no cropland nor urban expansion
-    where_noexpan <- magclass::where(cropland_hr[, t, ] > cropland_hr[, t - 1, ] | land_nocrop_hr[, t, "urban"] > land_nocrop_hr[, t - 1, "urban"])[["false"]][["regions"]]
+    where_noexpan <- magclass::where(
+      cropland_hr[, t, ] > cropland_hr[, t - 1, ] |
+        land_nocrop_hr[, t, "urban"] > land_nocrop_hr[, t - 1, "urban"]
+    )[["false"]][["regions"]]
     # allocate the area of primary forest in the previous time step to those cells
     land_nocrop_hr[where_noexpan, t, "primforest"] <- land_nocrop_hr[where_noexpan, t - 1, "primforest"]
 
@@ -497,7 +535,9 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     primf_reduc_weight[is.na(primf_reduc_weight) | is.infinite(primf_reduc_weight)] <- 0
 
     # allocate the residual primary forest reduction
-    land_nocrop_hr[, t, "primforest"] <- land_nocrop_hr[, t, "primforest"] - primf_residual_reduc_lr * primf_reduc_weight
+    land_nocrop_hr[, t, "primforest"] <-
+      land_nocrop_hr[, t, "primforest"] -
+      primf_residual_reduc_lr * primf_reduc_weight
     # account for small mismatches during multiplication with weight
     land_nocrop_hr[, t, "primforest"][land_nocrop_hr[, t, "primforest"] < 0] <- 0
 
@@ -510,7 +550,10 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
     primf_avail_hr <- land_nocrop_hr[, t - 1, "primforest"] - land_nocrop_hr[, t, "primforest"]
 
     # Check if there is still  land available in this cell for the amount of forest required
-    nocrop_land_left_hr <- setNames(land_tot_nocrop_veg_hr[, t, ] - setYears(land_nocrop_hr[, t, "primforest"], NULL), NULL)
+    nocrop_land_left_hr <- setNames(
+      land_tot_nocrop_veg_hr[, t, ] - setYears(land_nocrop_hr[, t, "primforest"], NULL),
+      NULL
+    )
     # weight by either gap between current tmp and previous time step, or by amount of land remaining
     primf_avail_hr_constr <- pmin(primf_avail_hr, nocrop_land_left_hr)
     primf_avail_hr_constr[primf_avail_hr_constr < 0] <- 0
@@ -547,7 +590,7 @@ interpolateAvlCroplandWeighted <- function(x, x_ini_lr, x_ini_hr, avl_cropland_h
   # Rescale secondary unmanaged land based on previously
   # allocated primary forest to avoid conservation over-allocation
   unmg_consv_land_hr <- dimSums(all_consv_hr[, , c("primforest", "secdforest", "other")], dim = 3)
-  residual_consv_hr <-  unmg_consv_land_hr - setNames(land_nocrop_hr[, , "primforest"], NULL)
+  residual_consv_hr <- unmg_consv_land_hr - setNames(land_nocrop_hr[, , "primforest"], NULL)
   residual_consv_hr[residual_consv_hr < 0] <- 0
   consv_residual_scaling <- residual_consv_hr / dimSums(all_consv_hr[, , c("secdforest", "other")], dim = 3)
   consv_residual_scaling[is.na(consv_residual_scaling) | is.infinite(consv_residual_scaling)] <- 0
