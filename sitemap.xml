@@ -1,0 +1,18 @@
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>/404.html</loc></url>
+<url><loc>/LICENSE-text.html</loc></url>
+<url><loc>/authors.html</loc></url>
+<url><loc>/index.html</loc></url>
+<url><loc>/reference/AutomaticMapping.html</loc></url>
+<url><loc>/reference/getAggregationMatrix.html</loc></url>
+<url><loc>/reference/groupAggregate.html</loc></url>
+<url><loc>/reference/index.html</loc></url>
+<url><loc>/reference/interpolate2.html</loc></url>
+<url><loc>/reference/interpolateAvlCroplandWeighted.html</loc></url>
+<url><loc>/reference/luqueries.html</loc></url>
+<url><loc>/reference/luscale-package.html</loc></url>
+<url><loc>/reference/rename_dimnames.html</loc></url>
+<url><loc>/reference/speed_aggregate.html</loc></url>
+<url><loc>/reference/superAggregate.html</loc></url>
+</urlset>
+
